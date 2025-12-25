@@ -68,15 +68,12 @@
     const tableBody = document.getElementById('table-body');
     let selectedFiles = [];
 
-    // Mapping columns: [Main Col Index] : [Sub Col Letter]
-    // A=0, B=1... / T=19, N=13, O=14, Q=16, S=18, M=12, V=21, AY=50, AZ=51, BA=52, BB=53, BC=54
     const colMap = [19, 13, 14, 16, 18, 12, 21, 50, 51, 52, 53, 54];
 
     dropZone.onclick = () => fileInput.click();
 
     fileInput.onchange = (e) => {
         const files = Array.from(e.target.files).filter(f => f.name.toLowerCase().startsWith('svc'));
-        // Sắp xếp mặc định theo tên file (1, 2, 3...)
         selectedFiles = files.sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true}));
         renderFileList();
     };
@@ -88,12 +85,12 @@
     }
 
     processBtn.onclick = async () => {
-        tableBody.innerHTML = ''; // Làm sạch bảng trước khi ghép
+        tableBody.innerHTML = ''; 
         for (const file of selectedFiles) {
             const data = await readExcel(file);
             appendDataToTable(data);
         }
-        alert("Đã ghép xong! Toàn bộ hàng trống đã được giữ nguyên.");
+        alert("Đã ghép xong! Đã loại bỏ các hàng trống thừa giữa các file.");
         document.getElementById('result-area').classList.remove('hidden');
     };
 
@@ -103,9 +100,23 @@
             reader.onload = (e) => {
                 const workbook = XLSX.read(e.target.result, { type: 'binary' });
                 const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                // defval: "" đảm bảo các ô trống không bị bỏ qua khi chuyển sang JSON
                 const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: "" });
-                resolve(jsonData.slice(5)); // Lấy từ hàng 6 (index 5)
+                
+                let allRows = jsonData.slice(5); // Lấy từ hàng 6
+                
+                // TÌM HÀNG CUỐI CÙNG THỰC SỰ CÓ DỮ LIỆU
+                // Duyệt ngược từ dưới lên để tìm dòng đầu tiên có ít nhất 1 ô không rỗng
+                let lastDataRowIndex = -1;
+                for (let i = allRows.length - 1; i >= 0; i--) {
+                    if (allRows[i].some(cell => cell !== "" && cell !== null && cell !== undefined)) {
+                        lastDataRowIndex = i;
+                        break;
+                    }
+                }
+
+                // Nếu tìm thấy hàng có dữ liệu, chỉ lấy đến hàng đó
+                // Nếu file hoàn toàn trống, trả về mảng rỗng
+                resolve(lastDataRowIndex !== -1 ? allRows.slice(0, lastDataRowIndex + 1) : []);
             };
             reader.readAsBinaryString(file);
         });
@@ -116,7 +127,6 @@
             const tr = document.createElement('tr');
             colMap.forEach(colIdx => {
                 const td = document.createElement('td');
-                // Lấy dữ liệu ô, nếu null/undefined thì để chuỗi rỗng
                 const cellValue = row[colIdx];
                 td.innerText = (cellValue === undefined || cellValue === null) ? '' : cellValue;
                 tr.appendChild(td);
@@ -125,12 +135,10 @@
         });
     }
 
-    // Chức năng Copy mới: Chỉ lấy phần dữ liệu (tbody), không lấy tiêu đề (thead)
     document.getElementById('copy-btn').onclick = () => {
         const el = document.getElementById('table-body'); 
         const range = document.createRange();
         const sel = window.getSelection();
-        
         sel.removeAllRanges();
         try {
             range.selectNodeContents(el);
@@ -139,12 +147,10 @@
             range.selectNode(el);
             sel.addRange(range);
         }
-
-        const successful = document.execCommand('copy');
-        if (successful) {
-            alert("Đã sao chép dữ liệu (không bao gồm tiêu đề)! Bạn có thể dán vào Excel.");
+        if (document.execCommand('copy')) {
+            alert("Đã copy dữ liệu! Các file được ghép sát nhau.");
         }
-        sel.removeAllRanges(); // Bỏ bôi đen sau khi copy
+        sel.removeAllRanges();
     };
 
     function clearAll() {
