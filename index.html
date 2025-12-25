@@ -68,6 +68,7 @@
     const tableBody = document.getElementById('table-body');
     let selectedFiles = [];
 
+    // Mapping: T, N, O, Q, S, M, V, AY, AZ, BA, BB, BC
     const colMap = [19, 13, 14, 16, 18, 12, 21, 50, 51, 52, 53, 54];
 
     dropZone.onclick = () => fileInput.click();
@@ -90,7 +91,7 @@
             const data = await readExcel(file);
             appendDataToTable(data);
         }
-        alert("Đã ghép xong! Đã loại bỏ các hàng trống thừa giữa các file.");
+        alert("Đã gộp sát tất cả SVC! Hãy kiểm tra bảng kết quả.");
         document.getElementById('result-area').classList.remove('hidden');
     };
 
@@ -102,21 +103,28 @@
                 const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
                 const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: "" });
                 
-                let allRows = jsonData.slice(5); // Lấy từ hàng 6
+                let allRowsFrom6 = jsonData.slice(5); // Lấy từ hàng 6
                 
-                // TÌM HÀNG CUỐI CÙNG THỰC SỰ CÓ DỮ LIỆU
-                // Duyệt ngược từ dưới lên để tìm dòng đầu tiên có ít nhất 1 ô không rỗng
-                let lastDataRowIndex = -1;
-                for (let i = allRows.length - 1; i >= 0; i--) {
-                    if (allRows[i].some(cell => cell !== "" && cell !== null && cell !== undefined)) {
-                        lastDataRowIndex = i;
+                // Lọc bỏ các hàng trống ở cuối mỗi file SVC trước khi trả về kết quả
+                // Duyệt ngược từ dưới lên
+                let lastValidIndex = -1;
+                for (let i = allRowsFrom6.length - 1; i >= 0; i--) {
+                    const row = allRowsFrom6[i];
+                    // Kiểm tra xem hàng có ô nào chứa ký tự thực sự (không phải chỉ dấu cách) không
+                    const hasData = row.some(cell => {
+                        if (cell === null || cell === undefined) return false;
+                        return String(cell).trim() !== ""; 
+                    });
+
+                    if (hasData) {
+                        lastValidIndex = i;
                         break;
                     }
                 }
 
-                // Nếu tìm thấy hàng có dữ liệu, chỉ lấy đến hàng đó
-                // Nếu file hoàn toàn trống, trả về mảng rỗng
-                resolve(lastDataRowIndex !== -1 ? allRows.slice(0, lastDataRowIndex + 1) : []);
+                // Chỉ lấy từ hàng 6 đến hàng cuối cùng có dữ liệu thực
+                const cleanedRows = lastValidIndex !== -1 ? allRowsFrom6.slice(0, lastValidIndex + 1) : [];
+                resolve(cleanedRows);
             };
             reader.readAsBinaryString(file);
         });
@@ -127,8 +135,8 @@
             const tr = document.createElement('tr');
             colMap.forEach(colIdx => {
                 const td = document.createElement('td');
-                const cellValue = row[colIdx];
-                td.innerText = (cellValue === undefined || cellValue === null) ? '' : cellValue;
+                const val = row[colIdx];
+                td.innerText = (val === undefined || val === null) ? '' : val;
                 tr.appendChild(td);
             });
             tableBody.appendChild(tr);
@@ -148,7 +156,7 @@
             sel.addRange(range);
         }
         if (document.execCommand('copy')) {
-            alert("Đã copy dữ liệu! Các file được ghép sát nhau.");
+            alert("Đã copy dữ liệu sạch! Hãy dán vào Excel.");
         }
         sel.removeAllRanges();
     };
