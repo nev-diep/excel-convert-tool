@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>G5 & FX Data Tool</title>
+    <title>Hệ thống Tool Tổng hợp G5</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; margin: 20px; background-color: #f5f6f7; }
@@ -13,11 +13,18 @@
         .btn-tab.active { background: #007bff; color: white; }
         .tool-section { display: none; }
         .tool-section.active { display: block; }
+        
+        /* Style cho các Tab Excel */
         #drop-zone, .upload-box { border: 2px dashed #007bff; padding: 30px; text-align: center; margin-bottom: 15px; border-radius: 8px; background: #f0f7ff; cursor: pointer; position: relative; }
-        #drop-zone:hover, .upload-box:hover { background: #e6f2ff; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; white-space: nowrap; }
         th { background: #007bff; color: white; position: sticky; top: 0; }
+        
+        /* Style cho Tab Convert Tiếng Nhật */
+        .convert-container { max-width: 800px; margin: 0 auto; }
+        textarea { width: 100%; height: 150px; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; box-sizing: border-box; resize: vertical; margin-bottom: 10px; }
+        #warning-msg { color: #dc3545; font-weight: bold; font-size: 0.9em; margin: 10px 0; display: none; background: #fff5f5; padding: 10px; border-radius: 5px; border: 1px solid #ffc1c1; }
+        
         .action-area { margin: 20px 0; display: flex; gap: 10px; flex-wrap: wrap; }
         .btn-green { background: #28a745; color: white; }
         .btn-orange { background: #fd7e14; color: white; }
@@ -29,8 +36,9 @@
 
 <div class="container">
     <div class="menu-bar">
-        <button id="tab1-btn" class="btn-tab active" onclick="showTab(1)">Tạo Checklist G5 mới từ nhiều SVC</button>
-        <button id="tab2-btn" class="btn-tab" onclick="showTab(2)">JOB chuyển đổi - Ghép bess vào 動画設定G5</button>
+        <button id="tab1-btn" class="btn-tab active" onclick="showTab(1)">Checklist G5 từ SVC</button>
+        <button id="tab2-btn" class="btn-tab" onclick="showTab(2)">Ghép bess vào G5</button>
+        <button id="tab3-btn" class="btn-tab" onclick="showTab(3)">Convert Full-Half Width</button>
         <button class="btn-tab" disabled>Upcoming</button>
         <button class="btn-tab" disabled>Upcoming</button>
     </div>
@@ -43,17 +51,12 @@
         </div>
         <div class="action-area">
             <button class="btn-green" onclick="processSVC()">Bắt đầu ghép dữ liệu</button>
-            <button class="btn-orange" onclick="copyTable('table-svc-body')">Copy kết quả (Không tiêu đề)</button>
-            <button class="btn-red" onclick="clearTool(1)">Clear (Làm mới)</button>
+            <button class="btn-orange" onclick="copyTable('table-svc-body')">Copy kết quả</button>
+            <button class="btn-red" onclick="clearTool(1)">Clear</button>
         </div>
         <div style="overflow: auto; max-height: 500px;">
             <table>
-                <thead>
-                    <tr>
-                        <th>A(T)</th><th>B(N)</th><th>C(O)</th><th>D(Q)</th><th>E(S)</th><th>F(M)</th>
-                        <th>G(V)</th><th>H(AY)</th><th>I(AZ)</th><th>J(BA)</th><th>K(BB)</th><th>L(BC)</th>
-                    </tr>
-                </thead>
+                <thead><tr><th>A(T)</th><th>B(N)</th><th>C(O)</th><th>D(Q)</th><th>E(S)</th><th>F(M)</th><th>G(V)</th><th>H(AY)</th><th>I(AZ)</th><th>J(BA)</th><th>K(BB)</th><th>L(BC)</th></tr></thead>
                 <tbody id="table-svc-body"></tbody>
             </table>
         </div>
@@ -73,24 +76,41 @@
         <div class="action-area">
             <button class="btn-green" onclick="processG5FX()">Thực hiện chuyển đổi</button>
             <button class="btn-orange" onclick="copyTable('table-g5fx-body', true)">Copy kết quả (Bỏ 2 cột đầu)</button>
-            <button class="btn-red" onclick="clearTool(2)">Clear (Làm mới)</button>
+            <button class="btn-red" onclick="clearTool(2)">Clear</button>
         </div>
         <div style="overflow: auto; max-height: 500px;">
-            <table id="table-g5fx">
+            <table>
                 <thead>
-                    <tr>
-                        <th style="background:#6c757d">G (G5)</th><th style="background:#6c757d">H (G5)</th>
-                        <th>I (FX)</th><th>J (FX)</th><th>K (FX)</th><th>L (FX)</th><th>M (FX)</th>
-                        <th>R (FX)</th><th>S (FX)</th><th>T (FX)</th>
-                    </tr>
+                    <tr><th style="background:#6c757d">G (G5)</th><th style="background:#6c757d">H (G5)</th><th>I (FX)</th><th>J (FX)</th><th>K (FX)</th><th>L (FX)</th><th>M (FX)</th><th>R (FX)</th><th>S (FX)</th><th>T (FX)</th></tr>
                 </thead>
                 <tbody id="table-g5fx-body"></tbody>
             </table>
         </div>
     </div>
+
+    <div id="section3" class="tool-section">
+        <div class="convert-container">
+            <label><b>Nhập text Tiếng Nhật (Hỗ trợ nhiều dòng):</b></label>
+            <textarea id="inputText" placeholder="ABC&#10; DEF &#10;GHU"></textarea>
+            
+            <div id="warning-msg"></div>
+
+            <label><b>Kết quả (Đã trim đầu/cuối từng dòng):</b></label>
+            <textarea id="outputText" readonly placeholder="Kết quả tự động hiện tại đây..."></textarea>
+            
+            <div class="action-area">
+                <button class="btn-orange" onclick="copyConvertResult()">Sao chép kết quả</button>
+                <button class="btn-red" onclick="clearTool(3)">Xóa sạch</button>
+                <span id="copy-status" style="margin-left:10px; align-self:center; font-weight:bold;"></span>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
+    // --- KHAI BÁO KATAKANA MAP ---
+    const katakanaMap = {'。': '｡', '、': '､', '「': '｢', '」': '｣', '・': '･', 'ァ': 'ｧ', 'ア': 'ｱ', 'ィ': 'ｨ', 'イ': 'ｲ', 'ゥ': 'ｩ', 'ウ': 'ｳ', 'ェ': 'ｪ', 'エ': 'ｴ', 'ォ': 'ｫ', 'オ': 'ｵ', 'カ': 'ｶ', 'ガ': 'ｶﾞ', 'キ': 'ｷ', 'ギ': 'ｷﾞ', 'ク': 'ｸ', 'グ': 'ｸﾞ', 'ケ': 'ｹ', 'ゲ': 'ｹﾞ', 'コ': 'ｺ', 'ゴ': 'ｺﾞ', 'サ': 'ｻ', 'ザ': 'ｻﾞ', 'シ': 'ｼ', 'ジ': 'ｼﾞ', 'ス': 'ｽ', 'ズ': 'ｽﾞ', 'セ': 'ｾ', 'ゼ': 'ｾﾞ', 'ソ': 'ｿ', 'ゾ': 'ｿﾞ', 'タ': 'ﾀ', 'ダ': 'ﾀﾞ', 'チ': 'ﾁ', 'ヂ': 'ﾁﾞ', 'ッ': 'ｯ', 'ツ': 'ﾂ', 'ヅ': 'ﾂﾞ', 'テ': 'ﾃ', 'デ': 'ﾃﾞ', 'ト': 'ﾄ', 'ド': 'ﾄﾞ', 'ナ': 'ﾅ', 'ニ': 'ﾆ', 'ヌ': 'ﾇ', 'ネ': 'ﾈ', 'ノ': 'ﾉ', 'ハ': 'ﾊ', 'バ': 'ﾊﾞ', 'パ': 'ﾊﾟ', 'ヒ': 'ﾋ', 'ビ': 'ﾋﾞ', 'ピ': 'ﾋﾟ', 'フ': 'ﾌ', 'ブ': 'ﾌﾞ', 'プ': 'ﾌﾟ', 'ヘ': 'ﾍ', 'ベ': 'ﾍﾞ', 'ペ': 'ﾍﾟ', 'ホ': 'ﾎ', 'ボ': 'ﾎﾞ', 'ポ': 'ﾎﾟ', 'マ': 'ﾏ', 'ミ': 'ﾐ', 'ム': 'ﾑ', 'メ': 'ﾒ', 'モ': 'ﾓ', 'ヤ': 'ﾔ', 'ユ': 'ﾕ', 'ヨ': 'ﾖ', 'ャ': 'ｬ', 'ュ': 'ｭ', 'ョ': 'ｮ', 'ラ': 'ﾗ', 'リ': 'ﾘ', 'ル': 'ﾙ', 'レ': 'ﾚ', 'ロ': 'ﾛ', 'ワ': 'ﾜ', 'ヲ': 'ｦ', 'ン': 'ﾝ', 'ヴ': 'ｳﾞ', 'ヵ': 'ｶ', 'ヶ': 'ｹ', 'ー': 'ｰ', '゛': 'ﾞ', '゜': 'ﾟ', '　': ' '};
+
     // --- CHUNG ---
     function showTab(n) {
         document.querySelectorAll('.tool-section').forEach(s => s.classList.remove('active'));
@@ -101,19 +121,14 @@
 
     function clearTool(n) {
         if (n === 1) {
-            svcFiles = [];
-            document.getElementById('file-svc').value = "";
-            document.getElementById('svc-list').innerText = "";
-            document.getElementById('table-svc-body').innerHTML = "";
-        } else {
-            fileG5 = null; fileFX = null;
-            document.getElementById('file-g5').value = "";
-            document.getElementById('file-fx').value = "";
-            document.getElementById('g5-name').innerText = "";
-            document.getElementById('fx-name').innerText = "";
-            document.getElementById('table-g5fx-body').innerHTML = "";
+            svcFiles = []; document.getElementById('file-svc').value = ""; document.getElementById('svc-list').innerText = ""; document.getElementById('table-svc-body').innerHTML = "";
+        } else if (n === 2) {
+            fileG5 = null; fileFX = null; document.getElementById('file-g5').value = ""; document.getElementById('file-fx').value = "";
+            document.getElementById('g5-name').innerText = ""; document.getElementById('fx-name').innerText = ""; document.getElementById('table-g5fx-body').innerHTML = "";
+        } else if (n === 3) {
+            document.getElementById('inputText').value = ""; document.getElementById('outputText').value = "";
+            document.getElementById('warning-msg').style.display = "none"; document.getElementById('copy-status').innerText = "";
         }
-        alert("Đã làm mới dữ liệu Tab " + n);
     }
 
     function readExcel(file, sheetIndex = 0) {
@@ -121,8 +136,7 @@
             const reader = new FileReader();
             reader.onload = (e) => {
                 const wb = XLSX.read(e.target.result, { type: 'binary' });
-                const sheetName = wb.SheetNames[sheetIndex];
-                const sheet = wb.Sheets[sheetName];
+                const sheet = wb.Sheets[wb.SheetNames[sheetIndex]];
                 resolve(XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" }));
             };
             reader.readAsBinaryString(file);
@@ -130,60 +144,44 @@
     }
 
     function normalize(val) {
-        if (val === undefined || val === null || val === "") return "";
+        if (!val) return "";
         return String(val).replace(/^0+/, '').trim();
     }
 
     function copyTable(bodyId, skipFirstTwo = false) {
         const body = document.getElementById(bodyId);
-        if (body.rows.length === 0) return alert("Không có dữ liệu để copy!");
-        
+        if (body.rows.length === 0) return alert("Không có dữ liệu!");
         const sel = window.getSelection();
         sel.removeAllRanges();
         const range = document.createRange();
-
         if (skipFirstTwo) {
             let tempTable = document.createElement("table");
             Array.from(body.rows).forEach(row => {
                 let newRow = tempTable.insertRow();
-                for (let i = 2; i < row.cells.length; i++) {
-                    let newCell = newRow.insertCell();
-                    newCell.innerText = row.cells[i].innerText;
-                }
+                for (let i = 2; i < row.cells.length; i++) newRow.insertCell().innerText = row.cells[i].innerText;
             });
-            document.body.appendChild(tempTable);
-            range.selectNode(tempTable);
-            sel.addRange(range);
-            document.execCommand('copy');
-            document.body.removeChild(tempTable);
+            document.body.appendChild(tempTable); range.selectNode(tempTable); sel.addRange(range);
+            document.execCommand('copy'); document.body.removeChild(tempTable);
         } else {
-            range.selectNodeContents(body);
-            sel.addRange(range);
-            document.execCommand('copy');
+            range.selectNodeContents(body); sel.addRange(range); document.execCommand('copy');
         }
-        alert("Đã copy dữ liệu vào Clipboard!");
-        sel.removeAllRanges();
+        alert("Đã copy dữ liệu!"); sel.removeAllRanges();
     }
 
     // --- TAB 1: SVC ---
     let svcFiles = [];
     document.getElementById('file-svc').onchange = (e) => {
-        svcFiles = Array.from(e.target.files).filter(f => f.name.toLowerCase().startsWith('svc'))
-                        .sort((a,b) => a.name.localeCompare(b.name, undefined, {numeric:true}));
-        document.getElementById('svc-list').innerText = "Đã chọn: " + svcFiles.map(f => f.name).join(", ");
+        svcFiles = Array.from(e.target.files).filter(f => f.name.toLowerCase().startsWith('svc')).sort((a,b) => a.name.localeCompare(b.name, undefined, {numeric:true}));
+        document.getElementById('svc-list').innerText = "File đã chọn: " + svcFiles.map(f => f.name).join(", ");
     };
-
     async function processSVC() {
-        if(svcFiles.length === 0) return alert("Vui lòng chọn file SVC!");
         const body = document.getElementById('table-svc-body');
         const colMap = [19, 13, 14, 16, 18, 12, 21, 50, 51, 52, 53, 54];
         body.innerHTML = "";
         for (let f of svcFiles) {
             let rows = (await readExcel(f)).slice(5);
             let lastIdx = -1;
-            for(let i=rows.length-1; i>=0; i--) {
-                if(rows[i].some(c => String(c).trim() !== "")) { lastIdx = i; break; }
-            }
+            for(let i=rows.length-1; i>=0; i--) if(rows[i].some(c => String(c).trim() !== "")) { lastIdx = i; break; }
             if(lastIdx !== -1) {
                 rows.slice(0, lastIdx + 1).forEach(row => {
                     let tr = body.insertRow();
@@ -191,43 +189,69 @@
                 });
             }
         }
-        alert("Ghép SVC hoàn tất!");
     }
 
     // --- TAB 2: G5 & FX ---
     let fileG5, fileFX;
-    document.getElementById('file-g5').onchange = (e) => { fileG5 = e.target.files[0]; document.getElementById('g5-name').innerText = "File đã chọn: " + fileG5.name; };
-    document.getElementById('file-fx').onchange = (e) => { fileFX = e.target.files[0]; document.getElementById('fx-name').innerText = "File đã chọn: " + fileFX.name; };
-
+    document.getElementById('file-g5').onchange = (e) => { fileG5 = e.target.files[0]; document.getElementById('g5-name').innerText = fileG5.name; };
+    document.getElementById('file-fx').onchange = (e) => { fileFX = e.target.files[0]; document.getElementById('fx-name').innerText = fileFX.name; };
     async function processG5FX() {
-        if(!fileG5 || !fileFX) return alert("Vui lòng chọn đủ 2 file!");
+        if(!fileG5 || !fileFX) return alert("Chọn đủ 2 file!");
         const dataG5 = (await readExcel(fileG5, 0)).slice(5);
         const dataFX = (await readExcel(fileFX, 1)).slice(4);
-        const body = document.getElementById('table-g5fx-body');
-        body.innerHTML = "";
-
+        const body = document.getElementById('table-g5fx-body'); body.innerHTML = "";
         dataG5.forEach(gRow => {
             let tr = body.insertRow();
-            tr.insertCell().innerText = gRow[6] || ""; 
-            tr.insertCell().innerText = gRow[7] || "";
-
-            let g6Val = String(gRow[6] || "");
-            let [aa, bb] = g6Val.split('.');
+            tr.insertCell().innerText = gRow[6] || ""; tr.insertCell().innerText = gRow[7] || "";
+            let [aa, bb] = String(gRow[6] || "").split('.');
             let cc = String(gRow[7] || "").substring(0, 2);
-
-            let match = dataFX.find(fRow => {
-                let xx = normalize(fRow[5]);
-                let yy = normalize(fRow[6]);
-                let zz = normalize(fRow[7]);
-                return normalize(aa) === xx && normalize(bb) === yy && normalize(cc) === zz;
-            });
-
+            let match = dataFX.find(fRow => normalize(aa) === normalize(fRow[5]) && normalize(bb) === normalize(fRow[6]) && normalize(cc) === normalize(fRow[7]));
             const fxCols = [8, 9, 10, 11, 12, 17, 18, 19];
-            fxCols.forEach(idx => {
-                tr.insertCell().innerText = match ? (match[idx] || "") : "";
-            });
+            fxCols.forEach(idx => tr.insertCell().innerText = match ? (match[idx] || "") : "");
         });
-        alert("Chuyển đổi hoàn tất!");
+    }
+
+    // --- TAB 3: CONVERT ---
+    const inputArea = document.getElementById('inputText');
+    const outputArea = document.getElementById('outputText');
+    const warningMsg = document.getElementById('warning-msg');
+
+    inputArea.addEventListener('input', function() {
+        const rawText = inputArea.value;
+        // XỬ LÝ TRIM TỪNG DÒNG MỘT
+        const result = rawText.split('\n').map(line => {
+            return line
+                .replace(/[、。ァ-ヺ・ー゛゜]/g, ch => katakanaMap[ch] || ch)
+                .replace(/　/g, ' ')
+                .replace(/[！-～]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0))
+                .replace(/,/g, '､')
+                .trim();
+        }).join('\n');
+
+        outputArea.value = result;
+        
+        // Kiểm tra Rule cảnh báo
+        let warns = [];
+        if (result.includes("  ")) warns.push("⚠️ [FORMAT] Có 2 dấu cách liên tiếp");
+        if (/[A-Za-z0-9]ｰ|ｰ[A-Za-z0-9]/.test(result)) warns.push("🚫 [DRAWING] 'ｰ' không được dùng trong mã kỹ thuật");
+        if (/[ｦ-ﾟ一-龯]-[ｦ-ﾟ一-龯]/.test(result)) warns.push("🚫 [DRAWING] '-' dùng nối tiếng Nhật không phù hợp");
+
+        if (warns.length > 0) {
+            warningMsg.innerHTML = warns.join("<br>");
+            warningMsg.style.display = "block";
+        } else {
+            warningMsg.style.display = "none";
+        }
+    });
+
+    function copyConvertResult() {
+        outputArea.select();
+        navigator.clipboard.writeText(outputArea.value).then(() => {
+            const status = document.getElementById('copy-status');
+            status.innerText = "Đã copy! ✅";
+            status.style.color = "#28a745";
+            setTimeout(() => status.innerText = "", 2000);
+        });
     }
 </script>
 </body>
