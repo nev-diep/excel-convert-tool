@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Hệ thống Tool Tổng hợp G5</title>
+    <title>Excel Tool For Summary</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; margin: 20px; background-color: #f5f6f7; }
@@ -54,7 +54,7 @@
 
     <div id="section1" class="tool-section active">
         <div id="drop-zone" onclick="document.getElementById('file-svc').click()">
-            Kéo thả hoặc Click chọn các file <b>SVC</b>
+            <b>Chọn các file SVC</b>
             <input type="file" id="file-svc" multiple accept=".xlsx, .xlsm" style="display:none">
             <div id="svc-list" class="file-info"></div>
         </div>
@@ -65,7 +65,7 @@
         </div>
         <div style="overflow: auto; max-height: 500px;">
             <table>
-                <thead><tr><th>A(T)</th><th>B(N)</th><th>C(O)</th><th>D(Q)</th><th>E(S)</th><th>F(M)</th><th>G(V)</th><th>H(AY)</th><th>I(AZ)</th><th>J(BA)</th><th>K(BB)</th><th>L(BC)</th></tr></thead>
+                <thead><tr><th>ﾌｨｼﾞｶﾙｱﾄﾞﾚｽ</th><th>GG</th><th>PP</th><th>ｸﾞﾙｰﾌﾟ名称</th><th>表示名称</th><th>ﾀｲﾌﾟ</th><th>警報点</th><th>手元操作可</th><th>IPD単位</th><th>最小</th><th>最大</th><th>少数桁</th></tr></thead>
                 <tbody id="table-svc-body"></tbody>
             </table>
         </div>
@@ -90,7 +90,7 @@
         <div style="overflow: auto; max-height: 500px;">
             <table>
                 <thead>
-                    <tr><th style="background:#6c757d">G (G5)</th><th style="background:#6c757d">H (G5)</th><th>I (FX)</th><th>J (FX)</th><th>K (FX)</th><th>L (FX)</th><th>M (FX)</th><th>R (FX)</th><th>S (FX)</th><th>T (FX)</th></tr>
+                    <tr><th style="background:#6c757d">GG</th><th style="background:#6c757d">PP</th><th>表示名称</th><th>ﾎﾟｲﾝﾄ</th><th>状態ANA</th><th>警報</th><th>発停</th><th>信号種別</th><th>下限</th><th>上限</th></tr>
                 </thead>
                 <tbody id="table-g5fx-body"></tbody>
             </table>
