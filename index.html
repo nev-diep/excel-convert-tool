@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Excel Tool For Summary</title>
+    <title>Excel Tool For Summary - Fixed Tab 4</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; margin: 20px; background-color: #f5f6f7; }
@@ -13,45 +13,23 @@
         .btn-tab.active { background: #007bff; color: white; }
         .tool-section { display: none; }
         .tool-section.active { display: block; }
-        
         .tool-grid { display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 20px; align-items: start; }
         .column { display: flex; flex-direction: column; }
         label { font-weight: bold; margin-bottom: 8px; color: #444; }
-        
-        .list-container { 
-            height: 650px; overflow-y: auto; border: 1px solid #ccc; border-radius: 6px; 
-            background: #fff; box-sizing: border-box;
-        }
-
-        .line-item { 
-            display: flex; align-items: center; padding: 0 10px; border-bottom: 1px solid #eee; 
-            height: 35px; box-sizing: border-box; font-size: 14px; font-family: 'Consolas', monospace;
-        }
-
-        .input-line { 
-            width: 100%; border: none; outline: none; background: transparent; 
-            font-family: inherit; font-size: inherit; color: #333; height: 100%;
-        }
+        .list-container { height: 650px; overflow-y: auto; border: 1px solid #ccc; border-radius: 6px; background: #fff; box-sizing: border-box; }
+        .line-item { display: flex; align-items: center; padding: 0 10px; border-bottom: 1px solid #eee; height: 35px; box-sizing: border-box; font-size: 14px; font-family: 'Consolas', monospace; }
+        .input-line { width: 100%; border: none; outline: none; background: transparent; font-family: inherit; font-size: inherit; color: #333; height: 100%; }
         .input-line:focus { background-color: #f0f7ff; }
-
         .out-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-        .btn-copy-mini { 
-            padding: 2px 5px; font-size: 10px; background: #495057; color: white; 
-            border-radius: 3px; margin-left: 5px; width: 55px; text-align: center;
-            border: none; cursor: pointer;
-        }
+        .btn-copy-mini { padding: 2px 5px; font-size: 10px; background: #495057; color: white; border-radius: 3px; margin-left: 5px; width: 55px; text-align: center; border: none; cursor: pointer; }
         .btn-copy-mini.copied { background: #1e7e34 !important; }
-
         .warning-panel { border-left: 5px solid #dc3545; color: #dc3545; font-size: 12px; font-weight: bold; }
         .warn-item { color: #dc3545; background-color: #fff5f5; }
-        
         .action-area { margin: 15px 0; display: flex; gap: 10px; }
         .btn-green { background: #28a745; color: white; }
         .btn-orange { background: #fd7e14; color: white; }
         .btn-red { background: #dc3545; color: white; }
         .file-info { color: #28a745; margin-top: 10px; font-size: 0.9em; }
-
         #drop-zone, .upload-box { border: 2px dashed #007bff; padding: 30px; text-align: center; margin-bottom: 15px; border-radius: 8px; background: #f0f7ff; cursor: pointer; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
@@ -166,10 +144,8 @@
         document.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('active'));
         document.getElementById('section' + n).classList.add('active');
         document.getElementById('tab' + n + '-btn').classList.add('active');
-        
         if (n >= 3) {
             initInputRows(n);
-            // Logic Focus: Tự động focus vào ô đầu tiên khi chuyển tab
             setTimeout(() => {
                 const firstInput = document.querySelector(`#input-list-t${n} .input-line`);
                 if (firstInput) firstInput.focus();
@@ -282,12 +258,17 @@
                    .replace(/,/g, '､').trim();
     }
 
+    // ĐÃ SỬA: CHỈ CHUYỂN NHỮNG KÝ TỰ TRONG PATTERN, KHÔNG TỰ Ý CHUYỂN CHUỖI GỐC
     function processTab4(line) {
+        if (!line) return "";
         const pattern = /[／　０-９Ａ-ｚ（）「」＜＞：＃＆＋＝]/;
-        let rData = line.replace(/[!-~]/g, s => String.fromCharCode(s.charCodeAt(0) + 0xFEE0)).replace(/ /g, '　');
         let ans = "";
-        for (let char of rData) {
-            ans += (pattern.test(char)) ? ((char === '　') ? ' ' : String.fromCharCode(char.charCodeAt(0) - 0xFEE0)) : char;
+        for (let char of line) {
+            if (pattern.test(char)) {
+                ans += (char === '　') ? ' ' : String.fromCharCode(char.charCodeAt(0) - 0xFEE0);
+            } else {
+                ans += char; // Giữ nguyên trạng thái gốc (Katakana/Kanji...)
+            }
         }
         return ans.replace(/ +/g, ' ').trimEnd().replace(/－/g, "-").replace(/，/g, "、");
     }
@@ -306,7 +287,6 @@
             document.getElementById(`output-list-t${n}`).innerHTML = "";
             document.getElementById(`warning-msg-t${n}`).innerHTML = "";
             initInputRows(n);
-            // Logic Focus: Quay lại ô đầu tiên sau khi clear
             setTimeout(() => {
                 const firstInput = document.querySelector(`#input-list-t${n} .input-line`);
                 if (firstInput) firstInput.focus();
@@ -326,7 +306,7 @@
         }
     });
 
-    // Các hàm Excel Tab 1 & 2 giữ nguyên...
+    // Excel functions... (giữ nguyên)
     let svcFiles = [];
     document.getElementById('file-svc').onchange = (e) => {
         svcFiles = Array.from(e.target.files).filter(f => f.name.toLowerCase().startsWith('svc')).sort((a,b) => a.name.localeCompare(b.name, undefined, {numeric:true}));
