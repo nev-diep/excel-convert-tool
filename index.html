@@ -13,31 +13,22 @@
         .btn-tab.active { background: #007bff; color: white; }
         .tool-section { display: none; }
         .tool-section.active { display: block; }
-        
-        /* Layout Grid cho Tab 3 & 4 */
         .tool-grid { display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 20px; align-items: start; }
         .column { display: flex; flex-direction: column; }
         label { font-weight: bold; margin-bottom: 8px; color: #444; }
-        
         .list-container { height: 600px; overflow-y: auto; border: 1px solid #ccc; border-radius: 6px; background: #fff; box-sizing: border-box; }
         .line-item { display: flex; align-items: center; padding: 0 10px; border-bottom: 1px solid #eee; height: 35px; box-sizing: border-box; font-size: 14px; font-family: 'Consolas', monospace; }
         .input-line { width: 100%; border: none; outline: none; background: transparent; font-family: inherit; font-size: inherit; color: #333; height: 100%; }
         .input-line:focus { background-color: #f0f7ff; }
         .out-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-        /* Nút Copy hiệu ứng mới */
         .btn-copy-mini { padding: 2px 5px; font-size: 10px; background: #495057; color: white; border-radius: 3px; margin-left: 5px; width: 55px; text-align: center; border: none; cursor: pointer; }
         .btn-copy-mini.copied { background: #1e7e34 !important; }
-
         .warning-panel { border-left: 5px solid #dc3545; color: #dc3545; font-size: 12px; font-weight: bold; }
         .warn-item { color: #dc3545; background-color: #fff5f5; }
-        
         .action-area { margin: 15px 0; display: flex; gap: 10px; }
         .btn-green { background: #28a745; color: white; }
         .btn-orange { background: #fd7e14; color: white; }
         .btn-red { background: #dc3545; color: white; }
-        
-        /* Tab 1 & 2 Style */
         #drop-zone, .upload-box { border: 2px dashed #007bff; padding: 30px; text-align: center; margin-bottom: 15px; border-radius: 8px; background: #f0f7ff; cursor: pointer; }
         .file-info { color: #28a745; margin-top: 10px; font-size: 0.9em; font-weight: bold; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
@@ -146,26 +137,10 @@
 </div>
 
 <script>
-/* =====================================================
-   GLOBAL MAP & STATE (GIỮ NGUYÊN)
-===================================================== */
-const h2fMap = {
-    'ｱ':'ア','ｲ':'イ','ｳ':'ウ','ｴ':'エ','ｵ':'オ','ｶ':'カ','ｷ':'キ','ｸ':'ク','ｹ':'ケ','ｺ':'コ',
-    'ｻ':'サ','ｼ':'シ','ｽ':'ス','ｾ':'セ','ｿ':'ソ','ﾀ':'タ','ﾁ':'チ','ﾂ':'ツ','ﾃ':'テ','ﾄ':'ト',
-    'ﾅ':'ナ','ﾆ':'ニ','ﾇ':'ヌ','ﾈ':'ネ','ﾉ':'ノ','ﾊ':'ハ','ﾋ':'ヒ','ﾌ':'フ','ﾍ':'ヘ','ﾎ':'ホ',
-    'ﾏ':'マ','ﾐ':'ミ','ﾑ':'ム','ﾒ':'メ','ﾓ':'モ','ﾔ':'ヤ','ﾕ':'ユ','ﾖ':'ヨ',
-    'ﾗ':'ラ','ﾘ':'リ','ﾙ':'ル','ﾚ':'レ','ﾛ':'ロ','ﾜ':'ワ','ｦ':'ヲ','ﾝ':'ン',
-    'ｧ':'ァ','ｨ':'ィ','ｩ':'ゥ','ｪ':'ェ','ｫ':'ォ',
-    'ｬ':'ャ','ュ':'ュ','ョ':'ョ','ｯ':'ッ',
-    'ｰ':'ー','ﾞ':'゛','ﾟ':'゜',
-    '､':'、','｡':'。','･':'・','｢':'「','｣':'」'
-};
+const h2fMap = {'ｱ':'ア','ｲ':'イ','ｳ':'ウ','ｴ':'エ','ｵ':'オ','ｶ':'カ','ｷ':'キ','ｸ':'ク','ｹ':'ケ','ｺ':'コ','ｻ':'サ','ｼ':'シ','ｽ':'ス','ｾ':'セ','ｿ':'ソ','ﾀ':'タ','ﾁ':'チ','ﾂ':'ツ','ﾃ':'テ','ﾄ':'ト','ﾅ':'ナ','ﾆ':'ニ','ﾇ':'ヌ','ﾈ':'ネ','ﾉ':'ノ','ﾊ':'ハ','ﾋ':'ヒ','ﾌ':'フ','ﾍ':'ヘ','ﾎ':'ホ','ﾏ':'マ','ﾐ':'ミ','ﾑ':'ム','ﾒ':'メ','ﾓ':'モ','ﾔ':'ヤ','ﾕ':'ユ','ﾖ':'ヨ','ﾗ':'ラ','ﾘ':'リ','ﾙ':'ル','ﾚ':'レ','ﾛ':'ロ','ﾜ':'ワ','ｦ':'ヲ','ﾝ':'ン','ｧ':'ァ','ｨ':'ィ','ｩ':'ゥ','ｪ':'ェ','ｫ':'ォ','ｬ':'ャ','ュ':'ュ','ョ':'ョ','ｯ':'ッ','ｰ':'ー','ﾞ':'゛','ﾟ':'゜','､':'、','｡':'。','･':'・','｢':'「','｣':'」'};
 const f2hMap = Object.fromEntries(Object.entries(h2fMap).map(([k, v]) => [v, k]));
 let svcFiles = [];
 
-/* =====================================================
-   CHAR UTILITIES (CLEAN & SAFE)
-===================================================== */
 function toHalfASCII(ch) {
     const c = ch.charCodeAt(0);
     return (c >= 0xFF01 && c <= 0xFF5E) ? String.fromCharCode(c - 0xFEE0) : ch;
@@ -180,13 +155,8 @@ function normalizeSpace(ch, mode) {
     return ch;
 }
 
-/* =====================================================
-   TAB SWITCH + FOCUS (NEW)
-===================================================== */
 function focusInput(tabNum) {
-    setTimeout(() => {
-        document.querySelector(`#input-list-t${tabNum} .input-line`)?.focus();
-    }, 0);
+    setTimeout(() => { document.querySelector(`#input-list-t${tabNum} .input-line`)?.focus(); }, 0);
 }
 
 function showTab(n) {
@@ -194,44 +164,28 @@ function showTab(n) {
     document.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('active'));
     document.getElementById('section' + n).classList.add('active');
     document.getElementById('tab' + n + '-btn').classList.add('active');
-
     if (n >= 3) {
         initInputRows(n);
         handleProcess(n);
         focusInput(n);
     }
 }
-/* =====================================================
-   HÀM CUỘN ĐỒNG BỘ (SYNC SCROLL)
-===================================================== */
-function syncScroll(el, id1, id2) {
-    if (el.dataset.scrolling === "1") return;
-    el.dataset.scrolling = "1";
 
+function syncScroll(el, id1, id2) {
     const top = el.scrollTop;
     document.getElementById(id1).scrollTop = top;
     document.getElementById(id2).scrollTop = top;
-
-    requestAnimationFrame(() => {
-        el.dataset.scrolling = "";
-    });
 }
-/* =====================================================
-   TAB 1 & 2 (GIỮ NGUYÊN LOGIC, CHỈ LÀM AN TOÀN HƠN)
-===================================================== */
+
 document.getElementById('file-svc').onchange = e => {
-    svcFiles = Array.from(e.target.files)
-        .filter(f => f.name.toLowerCase().startsWith('svc'))
-        .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
-    document.getElementById('svc-list').innerText =
-        "Đã chọn: " + svcFiles.map(f => f.name).join(", ");
+    svcFiles = Array.from(e.target.files).filter(f => f.name.toLowerCase().startsWith('svc')).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+    document.getElementById('svc-list').innerText = "Đã chọn: " + svcFiles.map(f => f.name).join(", ");
 };
 
 async function processSVC() {
     const body = document.getElementById('table-svc-body');
     body.innerHTML = "";
     const colMap = [19,13,14,16,18,12,21,50,51,52,53,54];
-
     for (const f of svcFiles) {
         const data = await readExcel(f);
         data.slice(5).forEach(row => {
@@ -247,16 +201,13 @@ async function processG5FX() {
     const fileG5 = document.getElementById('file-g5').files[0];
     const fileFX = document.getElementById('file-fx').files[0];
     if (!fileG5 || !fileFX) return alert("Vui lòng upload đủ 2 file!");
-
     const dataG5 = await readExcel(fileG5);
     const dataFX = await readExcel(fileFX, 1);
     const body = document.getElementById('table-g5fx-body');
     body.innerHTML = "";
-
     const normalizeKey = s => processTab3(String(s || "").trim());
     const fxMap = new Map();
     dataFX.slice(1).forEach(r => r[2] && fxMap.set(normalizeKey(r[2]), r));
-
     dataG5.slice(1).forEach(row => {
         const fx = fxMap.get(normalizeKey(row[2])) || [];
         const tr = body.insertRow();
@@ -272,15 +223,11 @@ async function processG5FX() {
     alert("Xử lý xong Tab 2!");
 }
 
-/* =====================================================
-   TAB 3 – KATAKANA NARROW (CLEAN)
-===================================================== */
 function processTab3(line) {
     if (!line) return "";
     let out = "";
     for (const ch of line) {
-        let c = ch;
-        c = toHalfASCII(c);
+        let c = toHalfASCII(ch);
         c = normalizeSpace(c, "half");
         if (f2hMap[c]) c = f2hMap[c];
         if (c === ',') c = '､';
@@ -289,21 +236,15 @@ function processTab3(line) {
     return out.trim();
 }
 
-/* =====================================================
-   TAB 4 – VBA LOGIC (FIX BUG)
-===================================================== */
 function processTab4(line) {
     if (!line) return "";
     let tmp = "";
-
     for (const ch of line) {
-        let c = ch;
-        c = toFullASCII(c);
+        let c = toFullASCII(ch);
         c = normalizeSpace(c, "full");
         if (h2fMap[c]) c = h2fMap[c];
         tmp += c;
     }
-
     let out = "";
     const narrowPattern = /[０-９Ａ-Ｚａ-ｚ／（）＜＞：＃＆＋＝，]/;
     for (const ch of tmp) {
@@ -311,16 +252,9 @@ function processTab4(line) {
         else if (narrowPattern.test(ch)) out += toHalfASCII(ch);
         else out += ch;
     }
-
-    return out.replace(/ +/g, ' ')
-              .replace(/－/g, '-')
-              .replace(/，/g, '、')
-              .trimEnd();
+    return out.replace(/ +/g, ' ').replace(/－/g, '-').replace(/，/g, '、').trimEnd();
 }
 
-/* =====================================================
-   UI CORE (INPUT / OUTPUT / COPY / WARNING)
-===================================================== */
 function initInputRows(tabNum) {
     const c = document.getElementById(`input-list-t${tabNum}`);
     if (c.children.length) return;
@@ -358,54 +292,32 @@ function handleProcess(tabNum) {
     const out = document.getElementById(`output-list-t${tabNum}`);
     const warn = document.getElementById(`warning-msg-t${tabNum}`);
     out.innerHTML = ""; warn.innerHTML = "";
-
     inputs.forEach(inp => {
         const res = tabNum === 3 ? processTab3(inp.value) : processTab4(inp.value);
-
         const oRow = document.createElement('div');
         oRow.className = 'line-item';
         if (inp.value.trim()) {
             const span = document.createElement('span');
             span.className = 'out-text';
             span.innerText = res;
-
             const btn = document.createElement('button');
             btn.className = 'btn-copy-mini';
             btn.innerText = 'Copy';
             btn.dataset.text = res;
             btn.onclick = () => copyLine(btn.dataset.text, btn);
-
             oRow.append(span, btn);
         }
-      // Cập nhật logic Warning chi tiết hơn
+        out.appendChild(oRow);
         const wRow = document.createElement('div');
         wRow.className = 'line-item warn-item';
-        
         if (res.trim() !== "") {
-    let warnings = [];
-
-    // Space thừa
-    if (res.includes("  ")) warnings.push("🚫Cẩn thận! Đang có 2 dấu cách liền nhau");
-
-    // Lỗi dấu ｰ cạnh chữ/số ASCII
-    if (/(?:[A-Za-z0-9]ｰ|ｰ[A-Za-z0-9])/.test(res)) {
-        warnings.push("🚫Cẩn thận! Đang có dấu ｰ lẫn trong mã máy");
-    }
-
-    // Lỗi dấu nối "-" giữa chữ Nhật
-    if (/[ぁ-ゖァ-ヺ一-龯]-[ぁ-ゖァ-ヺ一-龯]/.test(res)) {
-        warnings.push("🚫Cẩn thận! Đang có dấu - lẫn trong chữ Nhật");
-    }
-
-    // Lỗi full-width dash
-    if (/－/.test(res)) {
-        warnings.push("🚫 Full-width dash");
-    }
-
-    wRow.innerText = warnings.join(" ");
-}
-
-warn.appendChild(wRow);
+            let warnings = [];
+            if (res.includes("  ")) warnings.push("🚫 Space x2");
+            if (/(?:[A-Za-z0-9]ｰ|ｰ[A-Za-z0-9])/.test(res)) warnings.push("🚫 Lỗi ｰ");
+            if (/[ぁ-ゖァ-ヺ一-龯]-[ぁ-ゖァ-ヺ一-龯]/.test(res)) warnings.push("🚫 Lỗi nối -");
+            wRow.innerText = warnings.join(" ");
+        }
+        warn.appendChild(wRow);
     });
 }
 
@@ -435,9 +347,6 @@ function clearTool(n) {
     }
 }
 
-/* =====================================================
-   UTIL
-===================================================== */
 function readExcel(file, sheetIdx = 0) {
     return new Promise(res => {
         const r = new FileReader();
