@@ -23,13 +23,27 @@
         /* Style cho Tab Convert Tiếng Nhật */
         .convert-container { max-width: 800px; margin: 0 auto; }
         textarea { width: 100%; height: 150px; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; box-sizing: border-box; resize: vertical; margin-bottom: 10px; }
-        #warning-msg { color: #dc3545; font-weight: bold; font-size: 0.9em; margin: 10px 0; display: none; background: #fff5f5; padding: 10px; border-radius: 5px; border: 1px solid #ffc1c1; }
+        
+        /* Style Warning Msg mới */
+        #warning-msg { 
+            color: #333; 
+            font-size: 0.95em; 
+            margin-top: 20px; 
+            display: none; 
+            background: #fff; 
+            padding: 15px; 
+            border-radius: 5px; 
+            border-left: 5px solid #dc3545;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            line-height: 1.6;
+        }
         
         .action-area { margin: 20px 0; display: flex; gap: 10px; flex-wrap: wrap; }
         .btn-green { background: #28a745; color: white; }
         .btn-orange { background: #fd7e14; color: white; }
         .btn-red { background: #dc3545; color: white; }
         .file-info { color: #28a745; margin-top: 10px; font-weight: normal; font-size: 0.9em; }
+        .err-highlight { color: #28a745; font-weight: bold; font-size: 1.1em; }
     </style>
 </head>
 <body>
@@ -91,10 +105,8 @@
     <div id="section3" class="tool-section">
         <div class="convert-container">
             <label><b>Nhập text Tiếng Nhật:</b></label>
-            <textarea id="inputText" placeholder="Nhập text cần convert"></textarea>
+            <textarea id="inputText" placeholder="Ví dụ: FEｰ10-1"></textarea>
             
-            <div id="warning-msg"></div>
-
             <label><b>Kết quả:</b></label>
             <textarea id="outputText" readonly placeholder="Kết quả tự động hiện tại đây..."></textarea>
             
@@ -103,15 +115,15 @@
                 <button class="btn-red" onclick="clearTool(3)">Clear</button>
                 <span id="copy-status" style="margin-left:10px; align-self:center; font-weight:bold;"></span>
             </div>
+
+            <div id="warning-msg"></div>
         </div>
     </div>
 </div>
 
 <script>
-    // --- KHAI BÁO KATAKANA MAP ---
     const katakanaMap = {'。': '｡', '、': '､', '「': '｢', '」': '｣', '・': '･', 'ァ': 'ｧ', 'ア': 'ｱ', 'ィ': 'ｨ', 'イ': 'ｲ', 'ゥ': 'ｩ', 'ウ': 'ｳ', 'ェ': 'ｪ', 'エ': 'ｴ', 'ォ': 'ｫ', 'オ': 'ｵ', 'カ': 'ｶ', 'ガ': 'ｶﾞ', 'キ': 'ｷ', 'ギ': 'ｷﾞ', 'ク': 'ｸ', 'グ': 'ｸﾞ', 'ケ': 'ｹ', 'ゲ': 'ｹﾞ', 'コ': 'ｺ', 'ゴ': 'ｺﾞ', 'サ': 'ｻ', 'ザ': 'ｻﾞ', 'シ': 'ｼ', 'ジ': 'ｼﾞ', 'ス': 'ｽ', 'ズ': 'ｽﾞ', 'セ': 'ｾ', 'ゼ': 'ｾﾞ', 'ソ': 'ｿ', 'ゾ': 'ｿﾞ', 'タ': 'ﾀ', 'ダ': 'ﾀﾞ', 'チ': 'ﾁ', 'ヂ': 'ﾁﾞ', 'ッ': 'ｯ', 'ツ': 'ﾂ', 'ヅ': 'ﾂﾞ', 'テ': 'ﾃ', 'デ': 'ﾃﾞ', 'ト': 'ﾄ', 'ド': 'ﾄﾞ', 'ナ': 'ﾅ', 'ニ': 'ﾆ', 'ヌ': 'ﾇ', 'ネ': 'ﾈ', 'ノ': 'ﾉ', 'ハ': 'ﾊ', 'バ': 'ﾊﾞ', 'パ': 'ﾊﾟ', 'ヒ': 'ﾋ', 'ビ': 'ﾋﾞ', 'ピ': 'ﾋﾟ', 'フ': 'ﾌ', 'ブ': 'ﾌﾞ', 'プ': 'ﾌﾟ', 'ヘ': 'ﾍ', 'ベ': 'ﾍﾞ', 'ペ': 'ﾍﾟ', 'ホ': 'ﾎ', 'ボ': 'ﾎﾞ', 'ポ': 'ﾎﾟ', 'マ': 'ﾏ', 'ミ': 'ﾐ', 'ム': 'ﾑ', 'メ': 'ﾒ', 'モ': 'ﾓ', 'ヤ': 'ﾔ', 'ユ': 'ﾕ', 'ヨ': 'ﾖ', 'ャ': 'ｬ', 'ュ': 'ｭ', 'ョ': 'ｮ', 'ラ': 'ﾗ', 'リ': 'ﾘ', 'ル': 'ﾙ', 'レ': 'ﾚ', 'ロ': 'ﾛ', 'ワ': 'ﾜ', 'ヲ': 'ｦ', 'ン': 'ﾝ', 'ヴ': 'ｳﾞ', 'ヵ': 'ｶ', 'ヶ': 'ｹ', 'ー': 'ｰ', '゛': 'ﾞ', '゜': 'ﾟ', '　': ' '};
 
-    // --- CHUNG ---
     function showTab(n) {
         document.querySelectorAll('.tool-section').forEach(s => s.classList.remove('active'));
         document.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('active'));
@@ -168,7 +180,6 @@
         alert("Đã copy dữ liệu!"); sel.removeAllRanges();
     }
 
-    // --- TAB 1: SVC ---
     let svcFiles = [];
     document.getElementById('file-svc').onchange = (e) => {
         svcFiles = Array.from(e.target.files).filter(f => f.name.toLowerCase().startsWith('svc')).sort((a,b) => a.name.localeCompare(b.name, undefined, {numeric:true}));
@@ -191,7 +202,6 @@
         }
     }
 
-    // --- TAB 2: G5 & FX ---
     let fileG5, fileFX;
     document.getElementById('file-g5').onchange = (e) => { fileG5 = e.target.files[0]; document.getElementById('g5-name').innerText = fileG5.name; };
     document.getElementById('file-fx').onchange = (e) => { fileFX = e.target.files[0]; document.getElementById('fx-name').innerText = fileFX.name; };
@@ -224,7 +234,6 @@
             return;
         }
 
-        // 1. XỬ LÝ CONVERT VÀ TRIM TỪNG DÒNG
         const processedLines = rawText.split('\n').map(line => {
             return line
                 .replace(/[、。ァ-ヺ・ー゛゜]/g, ch => katakanaMap[ch] || ch)
@@ -237,45 +246,32 @@
         const result = processedLines.join('\n');
         outputArea.value = result;
         
-        // 2. KIỂM TRA LỖI VÀ TRÍCH DẪN NGUYÊN CỤM
         let warns = [];
-        const linesForCheck = result.split('\n');
+        processedLines.forEach((line) => {
+            if (!line) return;
 
-        linesForCheck.forEach((line, index) => {
             // RULE 1: 2 dấu cách liên tiếp
             if (line.includes("  ")) {
-                const quoted = line.replace(/  /g, '<span style="background:#ffeded; border:1px dashed red;">&nbsp;&nbsp;</span>');
-                warns.push(`⚠️ [Dòng ${index+1}] Lỗi khoảng trắng kép: "...${quoted}..."`);
+                let h = line.replace(/  /g, '<span class="err-highlight">[khoảng trắng kép]</span>');
+                warns.push(`🚫 ${h} bị lỗi 2 dấu cách liên tiếp`);
             }
 
-            // RULE 2: 'ｰ' sai trong mã kỹ thuật (ví dụ FEｰ10)
-            // Tìm cụm từ chứa ký tự lỗi (bao gồm chữ/số xung quanh)
-            const techRegex = /([A-Za-z0-9]+ｰ[A-Za-z0-9]*|[A-Za-z0-9]*ｰ[A-Za-z0-9]+)/g;
-            const techMatches = line.match(techRegex);
-            if (techMatches) {
-                techMatches.forEach(m => {
-                    const highlighted = m.replace('ｰ', '<span style="color:red; font-weight:bold; font-size:1.2em;">ｰ</span>');
-                    warns.push(`🚫 [Dòng ${index+1}] Mã kỹ thuật dùng sai dấu ｰ: "<b>${highlighted}</b>"`);
-                });
+            // RULE 2: 'ｰ' sai trong mã kỹ thuật
+            if (/[A-Za-z0-9]ｰ|ｰ[A-Za-z0-9]/.test(line)) {
+                let h = line.replace(/ｰ/g, '<span class="err-highlight">ｰ</span>');
+                warns.push(`🚫 ${h} bị sai dấu ｰ`);
             }
 
-            // RULE 3: '-' nối tiếng Nhật (ví dụ ｱ-ｲ)
-            const jpRegex = /([ｦ-ﾟ一-龯]+-[ｦ-ﾟ一-龯]+)/g;
-            const jpMatches = line.match(jpRegex);
-            if (jpMatches) {
-                jpMatches.forEach(m => {
-                    const highlighted = m.replace('-', '<span style="color:red; font-weight:bold; font-size:1.2em;">-</span>');
-                    warns.push(`🚫 [Dòng ${index+1}] Dùng dấu - nối chữ Nhật: "<b>${highlighted}</b>"`);
-                });
+            // RULE 3: '-' nối tiếng Nhật
+            if (/[ｦ-ﾟ一-龯]-[ｦ-ﾟ一-龯]/.test(line)) {
+                let h = line.replace(/-/g, '<span class="err-highlight">-</span>');
+                warns.push(`🚫 ${h} bị sai dấu - khi nối chữ Nhật`);
             }
         });
 
-        // 3. HIỂN THỊ CẢNH BÁO XUỐNG DƯỚI
         if (warns.length > 0) {
-            // Loại bỏ các cảnh báo trùng lặp
             const uniqueWarns = [...new Set(warns)];
-            warningMsg.innerHTML = `<div style="margin-bottom:5px; text-decoration:underline">Danh sách lỗi phát hiện:</div>` + 
-                                   uniqueWarns.join("<hr style='border:0; border-top:1px solid #ffc1c1; margin:5px 0'>");
+            warningMsg.innerHTML = uniqueWarns.join("<br>");
             warningMsg.style.display = "block";
         } else {
             warningMsg.style.display = "none";
