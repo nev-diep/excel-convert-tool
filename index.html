@@ -19,14 +19,12 @@
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; white-space: nowrap; }
         th { background: #007bff; color: white; position: sticky; top: 0; }
         
-        /* Layout Grid cho Tab 3 & 4 */
         .tool-grid { display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 20px; align-items: start; }
         .column { display: flex; flex-direction: column; }
         label { font-weight: bold; margin-bottom: 8px; color: #444; }
         
         textarea { width: 100%; height: 600px; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; line-height: 2.2; font-family: 'Consolas', monospace; box-sizing: border-box; resize: none; }
 
-        /* Style cho danh sách Output theo dòng */
         .output-container, .warning-panel { 
             height: 600px; overflow-y: auto; border: 1px solid #ccc; border-radius: 6px; 
             background: #fff; box-sizing: border-box; padding: 0;
@@ -34,16 +32,23 @@
         
         .line-item { 
             display: flex; align-items: center; padding: 0 10px; border-bottom: 1px solid #eee; 
-            height: 30.8px; /* Khớp với line-height của textarea */
+            height: 30.8px; 
             box-sizing: border-box; line-height: 30.8px; font-size: 14px; font-family: 'Consolas', monospace;
         }
         
         .out-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        
+        /* HIỆU ỨNG NÚT COPY MINI */
         .btn-copy-mini { 
             padding: 2px 8px; font-size: 10px; background: #6c757d; color: white; 
             border-radius: 3px; margin-left: 5px; line-height: 1.5;
+            transition: all 0.2s ease; width: 50px; text-align: center;
         }
-        .btn-copy-mini:hover { background: #28a745; }
+        .btn-copy-mini:hover { background: #495057; }
+        .btn-copy-mini.copied { 
+            background: #28a745 !important; 
+            transform: scale(1.1);
+        }
 
         .warning-panel { border-left: 5px solid #dc3545; color: #dc3545; font-size: 12px; font-weight: bold; }
         .warn-item { border-bottom: 1px solid #fceaea; color: #dc3545; }
@@ -170,18 +175,27 @@
         if (n === 4) setTimeout(() => document.getElementById('inputTextT4').focus(), 0);
     }
 
-    // Đồng bộ cuộn giữa 3 cột
     function syncScroll(el, id1, id2) {
         document.getElementById(id1).scrollTop = el.scrollTop;
         document.getElementById(id2).scrollTop = el.scrollTop;
     }
 
-    // Hàm copy từng dòng
-    function copyLine(text) {
+    // CẬP NHẬT HIỆU ỨNG COPY
+    function copyLine(text, btn) {
         navigator.clipboard.writeText(text);
+        
+        // Thêm class hiệu ứng
+        btn.classList.add('copied');
+        const oldText = btn.innerText;
+        btn.innerText = "OK! ✅";
+        
+        // Trở về trạng thái cũ sau 1s
+        setTimeout(() => {
+            btn.classList.remove('copied');
+            btn.innerText = oldText;
+        }, 1000);
     }
 
-    // Hàm copy toàn bộ danh sách
     function copyFullOutput(listId, statusId) {
         const items = document.querySelectorAll(`#${listId} .out-text`);
         const text = Array.from(items).map(i => i.innerText).join('\n');
@@ -192,7 +206,6 @@
         });
     }
 
-    // Xử lý cảnh báo và trả về HTML từng dòng
     function getLineWarning(line) {
         if (!line) return "";
         let msg = "";
@@ -202,7 +215,6 @@
         return msg;
     }
 
-    // Hiển thị kết quả cho Tab 3 & 4
     function renderResults(lines, listId, warnId) {
         const listEl = document.getElementById(listId);
         const warnEl = document.getElementById(warnId);
@@ -210,13 +222,12 @@
         warnEl.innerHTML = "";
 
         lines.forEach(line => {
-            // Render Output Row
             const row = document.createElement('div');
             row.className = 'line-item';
-            row.innerHTML = `<span class="out-text">${line}</span><button class="btn-copy-mini" onclick="copyLine('${line.replace(/'/g, "\\'")}')">Copy</button>`;
+            // Truyền 'this' vào hàm copyLine để xác định nút nào vừa bấm
+            row.innerHTML = `<span class="out-text">${line}</span><button class="btn-copy-mini" onclick="copyLine('${line.replace(/'/g, "\\'")}', this)">Copy</button>`;
             listEl.appendChild(row);
 
-            // Render Warning Row
             const wRow = document.createElement('div');
             wRow.className = 'line-item warn-item';
             wRow.innerHTML = getLineWarning(line);
@@ -224,7 +235,6 @@
         });
     }
 
-    // TAB 3 LOGIC
     document.getElementById('inputText').addEventListener('input', function() {
         const lines = this.value.split('\n').map(line => {
             return line.replace(/[、。ァ-ヺ・ー゛゜]/g, ch => katakanaMap[ch] || ch)
@@ -235,7 +245,6 @@
         renderResults(lines, 'output-list-t3', 'warning-msg-t3');
     });
 
-    // TAB 4 LOGIC
     document.getElementById('inputTextT4').addEventListener('input', function() {
         const pattern = /[／　０-９Ａ-ｚ（）「」＜＞：＃＆＋＝]/;
         const lines = this.value.split('\n').map(line => {
@@ -251,7 +260,6 @@
         renderResults(lines, 'output-list-t4', 'warning-msg-t4');
     });
 
-    // Các hàm xử lý Excel của Tab 1 & 2 (Giữ nguyên từ code cũ của bạn)
     function readExcel(file, sheetIndex = 0) {
         return new Promise((resolve) => {
             const reader = new FileReader();
@@ -348,7 +356,6 @@
         }
     }
 
-    // Phím tắt ESC
     document.addEventListener('keydown', function(e) {
         if (e.key === "Escape") {
             const activeTab = document.querySelector('.tool-section.active');
