@@ -146,205 +146,289 @@
 </div>
 
 <script>
-    // --- KHAI BÁO BIẾN TOÀN CỤC ---
-    const h2fMap = {'ｱ':'ア','ｲ':'イ','ｳ':'ウ','ｴ':'エ','ｵ':'オ','ｶ':'カ','ｷ':'キ','ｸ':'ク','ｹ':'ケ','ｺ':'コ','ｻ':'サ','ｼ':'シ','ｽ':'ス','ｾ':'セ','ｿ':'ソ','ﾀ':'タ','ﾁ':'チ','ﾂ':'ツ','ﾃ':'テ','ﾄ':'ト','ﾅ':'ナ','ﾆ':'ニ','ﾇ':'ヌ','ﾈ':'ネ','ﾉ':'ノ','ﾊ':'ハ','ﾋ':'ヒ','ﾌ':'フ','ﾍ':'ヘ','ﾎ':'ホ','ﾏ':'マ','ﾐ':'ミ','ﾑ':'ム','ﾒ':'メ','ﾓ':'モ','ﾔ':'ヤ','ﾕ':'ユ','ﾖ':'ヨ','ﾗ':'ラ','ﾘ':'リ','ﾙ':'ル','ﾚ':'レ','ﾛ':'ロ','ﾜ':'ワ','ｦ':'ヲ','ﾝ':'ン','ｧ':'ァ','ｨ':'ィ','ｩ':'ゥ','ｪ':'ェ','ｫ':'ォ','ｬ':'ャ','ュ':'ュ','ョ':'ョ','ｯ':'ッ','ｰ':'ー','ﾞ':'゛','ﾟ':'゜','､':'、','｡':'。','･':'・','｢':'「','｣':'」'};
-    const f2hMap = Object.fromEntries(Object.entries(h2fMap).map(([k, v]) => [v, k]));
-    let svcFiles = [];
+/* =====================================================
+   GLOBAL MAP & STATE (GIỮ NGUYÊN)
+===================================================== */
+const h2fMap = {
+    'ｱ':'ア','ｲ':'イ','ｳ':'ウ','ｴ':'エ','ｵ':'オ','ｶ':'カ','ｷ':'キ','ｸ':'ク','ｹ':'ケ','ｺ':'コ',
+    'ｻ':'サ','ｼ':'シ','ｽ':'ス','ｾ':'セ','ｿ':'ソ','ﾀ':'タ','ﾁ':'チ','ﾂ':'ツ','ﾃ':'テ','ﾄ':'ト',
+    'ﾅ':'ナ','ﾆ':'ニ','ﾇ':'ヌ','ﾈ':'ネ','ﾉ':'ノ','ﾊ':'ハ','ﾋ':'ヒ','ﾌ':'フ','ﾍ':'ヘ','ﾎ':'ホ',
+    'ﾏ':'マ','ﾐ':'ミ','ﾑ':'ム','ﾒ':'メ','ﾓ':'モ','ﾔ':'ヤ','ﾕ':'ユ','ﾖ':'ヨ',
+    'ﾗ':'ラ','ﾘ':'リ','ﾙ':'ル','ﾚ':'レ','ﾛ':'ロ','ﾜ':'ワ','ｦ':'ヲ','ﾝ':'ン',
+    'ｧ':'ァ','ｨ':'ィ','ｩ':'ゥ','ｪ':'ェ','ｫ':'ォ',
+    'ｬ':'ャ','ュ':'ュ','ョ':'ョ','ｯ':'ッ',
+    'ｰ':'ー','ﾞ':'゛','ﾟ':'゜',
+    '､':'、','｡':'。','･':'・','｢':'「','｣':'」'
+};
+const f2hMap = Object.fromEntries(Object.entries(h2fMap).map(([k, v]) => [v, k]));
+let svcFiles = [];
 
-    // --- XỬ LÝ TAB ---
-    function showTab(n) {
-        document.querySelectorAll('.tool-section').forEach(s => s.classList.remove('active'));
-        document.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('active'));
-        document.getElementById('section' + n).classList.add('active');
-        document.getElementById('tab' + n + '-btn').classList.add('active');
-        if (n >= 3) {
-            initInputRows(n);
-            setTimeout(() => document.querySelector(`#input-list-t${n} .input-line`)?.focus(), 50);
-        }
+/* =====================================================
+   CHAR UTILITIES (CLEAN & SAFE)
+===================================================== */
+function toHalfASCII(ch) {
+    const c = ch.charCodeAt(0);
+    return (c >= 0xFF01 && c <= 0xFF5E) ? String.fromCharCode(c - 0xFEE0) : ch;
+}
+function toFullASCII(ch) {
+    const c = ch.charCodeAt(0);
+    return (c >= 0x21 && c <= 0x7E) ? String.fromCharCode(c + 0xFEE0) : ch;
+}
+function normalizeSpace(ch, mode) {
+    if (mode === "half") return ch === '　' ? ' ' : ch;
+    if (mode === "full") return ch === ' ' ? '　' : ch;
+    return ch;
+}
+
+/* =====================================================
+   TAB SWITCH + FOCUS (NEW)
+===================================================== */
+function focusInput(tabNum) {
+    setTimeout(() => {
+        document.querySelector(`#input-list-t${tabNum} .input-line`)?.focus();
+    }, 0);
+}
+
+function showTab(n) {
+    document.querySelectorAll('.tool-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('active'));
+    document.getElementById('section' + n).classList.add('active');
+    document.getElementById('tab' + n + '-btn').classList.add('active');
+
+    if (n >= 3) {
+        initInputRows(n);
+        handleProcess(n);
+        focusInput(n);
     }
+}
 
-    // --- LOGIC TAB 1 & 2 ---
-    document.getElementById('file-svc').onchange = (e) => {
-        svcFiles = Array.from(e.target.files).filter(f => f.name.toLowerCase().startsWith('svc')).sort((a,b) => a.name.localeCompare(b.name, undefined, {numeric:true}));
-        document.getElementById('svc-list').innerText = "Đã chọn: " + svcFiles.map(f => f.name).join(", ");
-    };
+/* =====================================================
+   TAB 1 & 2 (GIỮ NGUYÊN LOGIC, CHỈ LÀM AN TOÀN HƠN)
+===================================================== */
+document.getElementById('file-svc').onchange = e => {
+    svcFiles = Array.from(e.target.files)
+        .filter(f => f.name.toLowerCase().startsWith('svc'))
+        .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+    document.getElementById('svc-list').innerText =
+        "Đã chọn: " + svcFiles.map(f => f.name).join(", ");
+};
 
-    async function processSVC() {
-        const body = document.getElementById('table-svc-body'); body.innerHTML = "";
-        const colMap = [19, 13, 14, 16, 18, 12, 21, 50, 51, 52, 53, 54];
-        for (let f of svcFiles) {
-            let data = await readExcel(f);
-            data.slice(5).forEach(row => {
-                if(row[19]) {
-                    let tr = body.insertRow();
-                    colMap.forEach(idx => tr.insertCell().innerText = row[idx] || "");
-                }
-            });
-        }
-        alert("Xử lý xong Tab 1!");
-    }
+async function processSVC() {
+    const body = document.getElementById('table-svc-body');
+    body.innerHTML = "";
+    const colMap = [19,13,14,16,18,12,21,50,51,52,53,54];
 
-    async function processG5FX() {
-        const fileG5 = document.getElementById('file-g5').files[0];
-        const fileFX = document.getElementById('file-fx').files[0];
-        if(!fileG5 || !fileFX) return alert("Vui lòng upload đủ 2 file!");
-        
-        const dataG5 = await readExcel(fileG5);
-        const dataFX = await readExcel(fileFX, 1);
-        const body = document.getElementById('table-g5fx-body'); body.innerHTML = "";
-        
-        const fxMap = new Map();
-        dataFX.slice(1).forEach(r => { if(r[2]) fxMap.set(String(r[2]).trim(), r); });
-
-        dataG5.slice(1).forEach(row => {
-            let key = String(row[2]).trim();
-            let fxRow = fxMap.get(key) || [];
-            let tr = body.insertRow();
-            [0,1,2].forEach(i => tr.insertCell().innerText = row[i] || ""); // GG, PP, Name
-            tr.insertCell().innerText = fxRow[3] || ""; // Point
-            tr.insertCell().innerText = fxRow[15] || ""; // ANA
-            tr.insertCell().innerText = fxRow[16] || ""; // Alarm
-            tr.insertCell().innerText = fxRow[10] || ""; // Start/Stop
-            tr.insertCell().innerText = fxRow[5] || "";  // Type
-            tr.insertCell().innerText = fxRow[18] || ""; // Min
-            tr.insertCell().innerText = fxRow[19] || ""; // Max
-        });
-        alert("Xử lý xong Tab 2!");
-    }
-
-    // --- LOGIC TAB 3 & 4 (CORE) ---
-    function processTab3(line) {
-        if (!line) return "";
-        return line.replace(/[、。ァ-ヺ・ー]/g, ch => f2hMap[ch] || ch)
-                   .replace(/[！-～]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
-                   .replace(/　/g, ' ').replace(/,/g, '､').trim();
-    }
-
-    function processTab4(line) {
-        if (!line) return "";
-        // vbWide: Chuyển tất cả sang Full-width
-        let rData = "";
-        for (let char of line) {
-            let wide = char.replace(/[!-~]/g, s => String.fromCharCode(s.charCodeAt(0) + 0xFEE0)).replace(/ /g, '　');
-            rData += h2fMap[wide] || wide;
-        }
-        // Pattern lọc lại Narrow
-        const pattern = /[／　０-９Ａ-ｚ（）「」＜＞：＃＆＋＝，]/;
-        let ansData = "";
-        for (let char of rData) {
-            if (pattern.test(char)) {
-                ansData += (char === '　') ? ' ' : String.fromCharCode(char.charCodeAt(0) - 0xFEE0);
-            } else {
-                ansData += char;
-            }
-        }
-        return ansData.replace(/ +/g, ' ').trimEnd().replace(/－/g, "-").replace(/，/g, "、");
-    }
-
-    // --- UI HELPER ---
-    function initInputRows(tabNum) {
-        const container = document.getElementById(`input-list-t${tabNum}`);
-        if (container.children.length > 0) return;
-        for (let i = 0; i < 50; i++) addRow(tabNum, i);
-    }
-
-    function addRow(tabNum, index) {
-        const container = document.getElementById(`input-list-t${tabNum}`);
-        const row = document.createElement('div'); row.className = 'line-item';
-        const input = document.createElement('input'); input.className = 'input-line';
-        input.dataset.idx = index;
-        input.oninput = () => handleProcess(tabNum);
-        input.onpaste = (e) => handlePaste(e, tabNum);
-        input.onkeydown = (e) => {
-            const idx = parseInt(e.target.dataset.idx);
-            const ins = document.querySelectorAll(`#input-list-t${tabNum} .input-line`);
-            if (e.key === "ArrowDown" && idx < ins.length - 1) ins[idx + 1].focus();
-            if (e.key === "ArrowUp" && idx > 0) ins[idx - 1].focus();
-        };
-        row.appendChild(input); container.appendChild(row);
-    }
-
-    function handlePaste(e, tabNum) {
-        e.preventDefault();
-        const lines = e.clipboardData.getData('text').split(/\r?\n/);
-        const container = document.getElementById(`input-list-t${tabNum}`);
-        container.innerHTML = ""; 
-        lines.forEach((line, i) => {
-            addRow(tabNum, i);
-            container.querySelectorAll('.input-line')[i].value = line;
-        });
-        for(let i=0; i<15; i++) addRow(tabNum, lines.length + i);
-        handleProcess(tabNum);
-    }
-
-    function handleProcess(tabNum) {
-        const inputs = document.querySelectorAll(`#input-list-t${tabNum} .input-line`);
-        const outputList = document.getElementById(`output-list-t${tabNum}`);
-        const warnList = document.getElementById(`warning-msg-t${tabNum}`);
-        outputList.innerHTML = ""; warnList.innerHTML = "";
-        inputs.forEach(inp => {
-            let res = (tabNum === 3) ? processTab3(inp.value) : processTab4(inp.value);
-            let oRow = document.createElement('div'); oRow.className = 'line-item';
-            if (inp.value.trim()) oRow.innerHTML = `<span class="out-text">${res}</span><button class="btn-copy-mini" onclick="copyLine('${res.replace(/'/g, "\\'")}', this)">Copy</button>`;
-            outputList.appendChild(oRow);
-            let wRow = document.createElement('div'); wRow.className = 'line-item warn-item';
-            if (res.includes("  ")) wRow.innerText = "🚫 Space";
-            warnList.appendChild(wRow);
+    for (const f of svcFiles) {
+        const data = await readExcel(f);
+        data.slice(5).forEach(row => {
+            if (!row || row.length < 55 || !row[19]) return;
+            const tr = body.insertRow();
+            colMap.forEach(i => tr.insertCell().innerText = row[i] || "");
         });
     }
+    alert("Xử lý xong Tab 1!");
+}
 
-    function copyLine(text, btn) {
-        navigator.clipboard.writeText(text);
-        btn.classList.add('copied'); btn.innerText = "Copied";
-        setTimeout(() => { btn.classList.remove('copied'); btn.innerText = "Copy"; }, 500);
-    }
+async function processG5FX() {
+    const fileG5 = document.getElementById('file-g5').files[0];
+    const fileFX = document.getElementById('file-fx').files[0];
+    if (!fileG5 || !fileFX) return alert("Vui lòng upload đủ 2 file!");
 
-    function copyFullOutput(listId, statusId) {
-        const text = Array.from(document.querySelectorAll(`#${listId} .out-text`)).map(i => i.innerText).join('\n');
-        navigator.clipboard.writeText(text);
-        document.getElementById(statusId).innerText = "Đã copy toàn bộ! ✅";
-        setTimeout(() => document.getElementById(statusId).innerText = "", 1000);
-    }
+    const dataG5 = await readExcel(fileG5);
+    const dataFX = await readExcel(fileFX, 1);
+    const body = document.getElementById('table-g5fx-body');
+    body.innerHTML = "";
 
-    function syncScroll(el, id1, id2) {
-        document.getElementById(id1).scrollTop = el.scrollTop;
-        document.getElementById(id2).scrollTop = el.scrollTop;
-    }
+    const normalizeKey = s => processTab3(String(s || "").trim());
+    const fxMap = new Map();
+    dataFX.slice(1).forEach(r => r[2] && fxMap.set(normalizeKey(r[2]), r));
 
-    function clearTool(n) {
-        if(n >= 3) {
-            document.getElementById(`input-list-t${n}`).innerHTML = "";
-            initInputRows(n); handleProcess(n);
-        } else {
-            document.getElementById(`table-svc-body`).innerHTML = "";
-            document.getElementById(`table-g5fx-body`).innerHTML = "";
-        }
-    }
-
-    function readExcel(file, sheetIdx = 0) {
-        return new Promise((res) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const wb = XLSX.read(e.target.result, {type: 'binary'});
-                res(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[sheetIdx]], {header: 1, defval: ""}));
-            };
-            reader.readAsBinaryString(file);
-        });
-    }
-
-    function copyTable(id) {
-        const el = document.getElementById(id);
-        const range = document.createRange(); range.selectNode(el);
-        window.getSelection().removeAllRanges(); window.getSelection().addRange(range);
-        document.execCommand('copy'); alert("Đã copy bảng dữ liệu!");
-    }
-
-    document.addEventListener('keydown', (e) => {
-        if(e.key === "Escape") {
-            const active = document.querySelector('.tool-section.active');
-            if(active) clearTool(parseInt(active.id.replace('section','')));
-        }
+    dataG5.slice(1).forEach(row => {
+        const fx = fxMap.get(normalizeKey(row[2])) || [];
+        const tr = body.insertRow();
+        [0,1,2].forEach(i => tr.insertCell().innerText = row[i] || "");
+        tr.insertCell().innerText = fx[3] || "";
+        tr.insertCell().innerText = fx[15] || "";
+        tr.insertCell().innerText = fx[16] || "";
+        tr.insertCell().innerText = fx[10] || "";
+        tr.insertCell().innerText = fx[5] || "";
+        tr.insertCell().innerText = fx[18] || "";
+        tr.insertCell().innerText = fx[19] || "";
     });
+    alert("Xử lý xong Tab 2!");
+}
+
+/* =====================================================
+   TAB 3 – KATAKANA NARROW (CLEAN)
+===================================================== */
+function processTab3(line) {
+    if (!line) return "";
+    let out = "";
+    for (const ch of line) {
+        let c = ch;
+        c = toHalfASCII(c);
+        c = normalizeSpace(c, "half");
+        if (f2hMap[c]) c = f2hMap[c];
+        if (c === ',') c = '､';
+        out += c;
+    }
+    return out.trim();
+}
+
+/* =====================================================
+   TAB 4 – VBA LOGIC (FIX BUG)
+===================================================== */
+function processTab4(line) {
+    if (!line) return "";
+    let tmp = "";
+
+    for (const ch of line) {
+        let c = ch;
+        c = toFullASCII(c);
+        c = normalizeSpace(c, "full");
+        if (h2fMap[c]) c = h2fMap[c];
+        tmp += c;
+    }
+
+    let out = "";
+    const narrowPattern = /[０-９Ａ-Ｚａ-ｚ／（）＜＞：＃＆＋＝，]/;
+    for (const ch of tmp) {
+        if (ch === '　') out += ' ';
+        else if (narrowPattern.test(ch)) out += toHalfASCII(ch);
+        else out += ch;
+    }
+
+    return out.replace(/ +/g, ' ')
+              .replace(/－/g, '-')
+              .replace(/，/g, '、')
+              .trimEnd();
+}
+
+/* =====================================================
+   UI CORE (INPUT / OUTPUT / COPY / WARNING)
+===================================================== */
+function initInputRows(tabNum) {
+    const c = document.getElementById(`input-list-t${tabNum}`);
+    if (c.children.length) return;
+    for (let i = 0; i < 50; i++) addRow(tabNum, i);
+}
+
+function addRow(tabNum, idx) {
+    const row = document.createElement('div');
+    row.className = 'line-item';
+    const input = document.createElement('input');
+    input.className = 'input-line';
+    input.dataset.idx = idx;
+    input.oninput = () => handleProcess(tabNum);
+    input.onpaste = e => handlePaste(e, tabNum);
+    row.appendChild(input);
+    document.getElementById(`input-list-t${tabNum}`).appendChild(row);
+}
+
+function handlePaste(e, tabNum) {
+    e.preventDefault();
+    const lines = e.clipboardData.getData('text').split(/\r?\n/);
+    const c = document.getElementById(`input-list-t${tabNum}`);
+    c.innerHTML = "";
+    lines.forEach((l, i) => {
+        addRow(tabNum, i);
+        c.querySelectorAll('.input-line')[i].value = l;
+    });
+    for (let i = 0; i < 15; i++) addRow(tabNum, lines.length + i);
+    handleProcess(tabNum);
+    focusInput(tabNum);
+}
+
+function handleProcess(tabNum) {
+    const inputs = document.querySelectorAll(`#input-list-t${tabNum} .input-line`);
+    const out = document.getElementById(`output-list-t${tabNum}`);
+    const warn = document.getElementById(`warning-msg-t${tabNum}`);
+    out.innerHTML = ""; warn.innerHTML = "";
+
+    inputs.forEach(inp => {
+        const res = tabNum === 3 ? processTab3(inp.value) : processTab4(inp.value);
+
+        const oRow = document.createElement('div');
+        oRow.className = 'line-item';
+        if (inp.value.trim()) {
+            const span = document.createElement('span');
+            span.className = 'out-text';
+            span.innerText = res;
+
+            const btn = document.createElement('button');
+            btn.className = 'btn-copy-mini';
+            btn.innerText = 'Copy';
+            btn.dataset.text = res;
+            btn.onclick = () => copyLine(btn.dataset.text, btn);
+
+            oRow.append(span, btn);
+        }
+        out.appendChild(oRow);
+
+        const w = document.createElement('div');
+        w.className = 'line-item warn-item';
+        if (res.includes("  ")) w.innerText = "🚫 Space";
+        warn.appendChild(w);
+    });
+}
+
+function copyLine(text, btn) {
+    navigator.clipboard.writeText(text);
+    btn.classList.add('copied');
+    btn.innerText = "Copied";
+    setTimeout(() => { btn.classList.remove('copied'); btn.innerText = "Copy"; }, 500);
+}
+
+function copyFullOutput(id, statusId) {
+    const t = [...document.querySelectorAll(`#${id} .out-text`)].map(e => e.innerText).join('\n');
+    navigator.clipboard.writeText(t);
+    document.getElementById(statusId).innerText = "Đã copy toàn bộ! ✅";
+    setTimeout(() => document.getElementById(statusId).innerText = "", 1000);
+}
+
+function clearTool(n) {
+    if (n >= 3) {
+        document.getElementById(`input-list-t${n}`).innerHTML = "";
+        initInputRows(n);
+        handleProcess(n);
+        focusInput(n);
+    } else {
+        document.getElementById('table-svc-body').innerHTML = "";
+        document.getElementById('table-g5fx-body').innerHTML = "";
+    }
+}
+
+/* =====================================================
+   UTIL
+===================================================== */
+function readExcel(file, sheetIdx = 0) {
+    return new Promise(res => {
+        const r = new FileReader();
+        r.onload = e => {
+            const wb = XLSX.read(e.target.result, { type: 'binary' });
+            res(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[sheetIdx]], { header: 1, defval: "" }));
+        };
+        r.readAsBinaryString(file);
+    });
+}
+
+function copyTable(id) {
+    const el = document.getElementById(id);
+    const r = document.createRange();
+    r.selectNode(el);
+    const s = window.getSelection();
+    s.removeAllRanges();
+    s.addRange(r);
+    document.execCommand('copy');
+    alert("Đã copy bảng dữ liệu!");
+}
+
+document.addEventListener('keydown', e => {
+    if (e.key === "Escape") {
+        const a = document.querySelector('.tool-section.active');
+        if (a) clearTool(parseInt(a.id.replace('section', '')));
+    }
+});
 </script>
 </body>
 </html>
