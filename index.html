@@ -6,7 +6,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; margin: 20px; background-color: #f5f6f7; }
-        .container { max-width: 1500px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .container { max-width: 1600px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .menu-bar { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; padding-bottom: 15px; }
         button { padding: 10px 18px; cursor: pointer; border: none; border-radius: 5px; font-weight: bold; transition: 0.3s; }
         .btn-tab { background: #e0e0e0; color: #333; }
@@ -14,26 +14,42 @@
         .tool-section { display: none; }
         .tool-section.active { display: block; }
         
-        /* Style cho Tab 1 & 2 của bạn */
         #drop-zone, .upload-box { border: 2px dashed #007bff; padding: 30px; text-align: center; margin-bottom: 15px; border-radius: 8px; background: #f0f7ff; cursor: pointer; position: relative; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; white-space: nowrap; }
         th { background: #007bff; color: white; position: sticky; top: 0; }
         
-        /* Layout so sánh cho Tab 3 & 4 */
+        /* Layout Grid cho Tab 3 & 4 */
         .tool-grid { display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 20px; align-items: start; }
         .column { display: flex; flex-direction: column; }
         label { font-weight: bold; margin-bottom: 8px; color: #444; }
-        textarea { width: 100%; height: 550px; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; line-height: 1.5; font-family: 'Consolas', 'Monaco', monospace; box-sizing: border-box; resize: none; }
         
-        /* Cảnh báo chuyên nghiệp */
-        .warning-panel { 
-            background: #fff; border-left: 5px solid #dc3545; padding: 15px; 
-            height: 550px; overflow-y: auto; box-shadow: inset 0 0 5px rgba(0,0,0,0.05);
-            font-weight: bold; color: #dc3545; font-size: 13px; line-height: 1.8;
+        textarea { width: 100%; height: 600px; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; line-height: 2.2; font-family: 'Consolas', monospace; box-sizing: border-box; resize: none; }
+
+        /* Style cho danh sách Output theo dòng */
+        .output-container, .warning-panel { 
+            height: 600px; overflow-y: auto; border: 1px solid #ccc; border-radius: 6px; 
+            background: #fff; box-sizing: border-box; padding: 0;
         }
+        
+        .line-item { 
+            display: flex; align-items: center; padding: 0 10px; border-bottom: 1px solid #eee; 
+            height: 30.8px; /* Khớp với line-height của textarea */
+            box-sizing: border-box; line-height: 30.8px; font-size: 14px; font-family: 'Consolas', monospace;
+        }
+        
+        .out-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .btn-copy-mini { 
+            padding: 2px 8px; font-size: 10px; background: #6c757d; color: white; 
+            border-radius: 3px; margin-left: 5px; line-height: 1.5;
+        }
+        .btn-copy-mini:hover { background: #28a745; }
+
+        .warning-panel { border-left: 5px solid #dc3545; color: #dc3545; font-size: 12px; font-weight: bold; }
+        .warn-item { border-bottom: 1px solid #fceaea; color: #dc3545; }
+        
         .err-highlight { color: #28a745 !important; font-weight: 900; text-decoration: underline; }
-        .space-err { background-color: #e8f5e9; border: 1px dashed #28a745; color: #28a745 !important; padding: 0 2px; }
+        .space-err { background-color: #e8f5e9; border: 1px dashed #28a745; padding: 0 2px; }
 
         .action-area { margin: 15px 0; display: flex; gap: 10px; flex-wrap: wrap; }
         .btn-green { background: #28a745; color: white; }
@@ -99,44 +115,44 @@
 
     <div id="section3" class="tool-section">
         <div class="action-area">
-            <button class="btn-orange" onclick="copyConvertResult('outputText', 'copy-status-t3')">Sao chép kết quả</button>
+            <button class="btn-orange" onclick="copyFullOutput('output-list-t3', 'copy-status-t3')">Copy tất cả kết quả</button>
             <button class="btn-red" onclick="clearTool(3)">Clear</button>
             <span id="copy-status-t3" style="align-self:center; font-weight:bold;"></span>
         </div>
         <div class="tool-grid">
             <div class="column">
                 <label>Input</label>
-                <textarea id="inputText" placeholder="Dán text vào đây..."></textarea>
+                <textarea id="inputText" placeholder="Dán text vào đây..." onscroll="syncScroll(this, 'output-list-t3', 'warning-msg-t3')"></textarea>
             </div>
             <div class="column">
-                <label>Output</label>
-                <textarea id="outputText" readonly></textarea>
+                <label>Output (Từng dòng)</label>
+                <div id="output-list-t3" class="output-container" onscroll="syncScroll(this, 'inputText', 'warning-msg-t3')"></div>
             </div>
             <div class="column">
-                <label>Bảng cảnh báo</label>
-                <div id="warning-msg-t3" class="warning-panel"></div>
+                <label>Bảng cảnh báo (Theo dòng)</label>
+                <div id="warning-msg-t3" class="warning-panel" onscroll="syncScroll(this, 'inputText', 'output-list-t3')"></div>
             </div>
         </div>
     </div>
 
     <div id="section4" class="tool-section">
         <div class="action-area">
-            <button class="btn-orange" onclick="copyConvertResult('outputTextT4', 'copy-status-t4')">Sao chép kết quả</button>
+            <button class="btn-orange" onclick="copyFullOutput('output-list-t4', 'copy-status-t4')">Copy tất cả kết quả</button>
             <button class="btn-red" onclick="clearTool(4)">Clear</button>
             <span id="copy-status-t4" style="align-self:center; font-weight:bold;"></span>
         </div>
         <div class="tool-grid">
             <div class="column">
                 <label>Input</label>
-                <textarea id="inputTextT4" placeholder="Dán text vào đây..."></textarea>
+                <textarea id="inputTextT4" placeholder="Dán text vào đây..." onscroll="syncScroll(this, 'output-list-t4', 'warning-msg-t4')"></textarea>
             </div>
             <div class="column">
-                <label>Output</label>
-                <textarea id="outputTextT4" readonly></textarea>
+                <label>Output (Từng dòng)</label>
+                <div id="output-list-t4" class="output-container" onscroll="syncScroll(this, 'inputTextT4', 'warning-msg-t4')"></div>
             </div>
             <div class="column">
-                <label>Bảng cảnh báo</label>
-                <div id="warning-msg-t4" class="warning-panel"></div>
+                <label>Bảng cảnh báo (Theo dòng)</label>
+                <div id="warning-msg-t4" class="warning-panel" onscroll="syncScroll(this, 'inputTextT4', 'output-list-t4')"></div>
             </div>
         </div>
     </div>
@@ -150,48 +166,65 @@
         document.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('active'));
         document.getElementById('section' + n).classList.add('active');
         document.getElementById('tab' + n + '-btn').classList.add('active');
-        
-        // Tự động focus vào Input khi chuyển sang Tab 3 hoặc 4
         if (n === 3) setTimeout(() => document.getElementById('inputText').focus(), 0);
         if (n === 4) setTimeout(() => document.getElementById('inputTextT4').focus(), 0);
     }
 
-    // Lắng nghe phím Esc để Clear tab hiện tại
-    document.addEventListener('keydown', function(e) {
-        if (e.key === "Escape") {
-            const activeTab = document.querySelector('.tool-section.active');
-            if (activeTab && activeTab.id === "section3") {
-                e.preventDefault();
-                clearTool(3);
-            } else if (activeTab && activeTab.id === "section4") {
-                e.preventDefault();
-                clearTool(4);
-            }
-        }
-    });
-
-    // --- LOGIC CẢNH BÁO DÙNG CHUNG ---
-    function generateWarnings(lines) {
-        let warns = [];
-        lines.forEach(line => {
-            if (!line) return;
-            if (line.includes("  ")) {
-                let h = line.replace(/  /g, '<span class="err-highlight space-err">&nbsp;&nbsp;</span>');
-                warns.push(`🚫 ${h} bị sai dấu cách`);
-            }
-            if (/[A-Za-z0-9]ｰ|ｰ[A-Za-z0-9]/.test(line)) {
-                let h = line.replace(/ｰ/g, '<span class="err-highlight">ｰ</span>');
-                warns.push(`🚫 ${h} bị sai dấu ｰ`);
-            }
-            if (/[ｦ-ﾟ一-龯]-[ｦ-ﾟ一-龯]/.test(line)) {
-                let h = line.replace(/-/g, '<span class="err-highlight">-</span>');
-                warns.push(`🚫 ${h} bị sai dấu - khi nối chữ Nhật`);
-            }
-        });
-        return [...new Set(warns)];
+    // Đồng bộ cuộn giữa 3 cột
+    function syncScroll(el, id1, id2) {
+        document.getElementById(id1).scrollTop = el.scrollTop;
+        document.getElementById(id2).scrollTop = el.scrollTop;
     }
 
-    // --- TAB 3 LOGIC ---
+    // Hàm copy từng dòng
+    function copyLine(text) {
+        navigator.clipboard.writeText(text);
+    }
+
+    // Hàm copy toàn bộ danh sách
+    function copyFullOutput(listId, statusId) {
+        const items = document.querySelectorAll(`#${listId} .out-text`);
+        const text = Array.from(items).map(i => i.innerText).join('\n');
+        navigator.clipboard.writeText(text).then(() => {
+            const s = document.getElementById(statusId);
+            s.innerText = "Đã copy tất cả! ✅";
+            setTimeout(() => s.innerText = "", 2000);
+        });
+    }
+
+    // Xử lý cảnh báo và trả về HTML từng dòng
+    function getLineWarning(line) {
+        if (!line) return "";
+        let msg = "";
+        if (line.includes("  ")) msg += `🚫 Dấu cách thừa `;
+        if (/[A-Za-z0-9]ｰ|ｰ[A-Za-z0-9]/.test(line)) msg += `🚫 Lỗi dấu ｰ `;
+        if (/[ｦ-ﾟ一-龯]-[ｦ-ﾟ一-龯]/.test(line)) msg += `🚫 Lỗi nối - `;
+        return msg;
+    }
+
+    // Hiển thị kết quả cho Tab 3 & 4
+    function renderResults(lines, listId, warnId) {
+        const listEl = document.getElementById(listId);
+        const warnEl = document.getElementById(warnId);
+        listEl.innerHTML = "";
+        warnEl.innerHTML = "";
+
+        lines.forEach(line => {
+            // Render Output Row
+            const row = document.createElement('div');
+            row.className = 'line-item';
+            row.innerHTML = `<span class="out-text">${line}</span><button class="btn-copy-mini" onclick="copyLine('${line.replace(/'/g, "\\'")}')">Copy</button>`;
+            listEl.appendChild(row);
+
+            // Render Warning Row
+            const wRow = document.createElement('div');
+            wRow.className = 'line-item warn-item';
+            wRow.innerHTML = getLineWarning(line);
+            warnEl.appendChild(wRow);
+        });
+    }
+
+    // TAB 3 LOGIC
     document.getElementById('inputText').addEventListener('input', function() {
         const lines = this.value.split('\n').map(line => {
             return line.replace(/[、。ァ-ヺ・ー゛゜]/g, ch => katakanaMap[ch] || ch)
@@ -199,12 +232,10 @@
                        .replace(/[！-～]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0))
                        .replace(/,/g, '､').trim();
         });
-        document.getElementById('outputText').value = lines.join('\n');
-        const warns = generateWarnings(lines);
-        document.getElementById('warning-msg-t3').innerHTML = warns.join("<br>");
+        renderResults(lines, 'output-list-t3', 'warning-msg-t3');
     });
 
-    // --- TAB 4 LOGIC (VBA GRAPHNAME) ---
+    // TAB 4 LOGIC
     document.getElementById('inputTextT4').addEventListener('input', function() {
         const pattern = /[／　０-９Ａ-ｚ（）「」＜＞：＃＆＋＝]/;
         const lines = this.value.split('\n').map(line => {
@@ -217,12 +248,10 @@
             }
             return ans.replace(/ +/g, ' ').trimEnd().replace(/－/g, "-").replace(/，/g, "、");
         });
-        document.getElementById('outputTextT4').value = lines.join('\n');
-        const warns = generateWarnings(lines);
-        document.getElementById('warning-msg-t4').innerHTML = warns.join("<br>");
+        renderResults(lines, 'output-list-t4', 'warning-msg-t4');
     });
 
-    // --- TAB 1 & 2 FUNCTIONS (GIỮ NGUYÊN BẢN GỐC) ---
+    // Các hàm xử lý Excel của Tab 1 & 2 (Giữ nguyên từ code cũ của bạn)
     function readExcel(file, sheetIndex = 0) {
         return new Promise((resolve) => {
             const reader = new FileReader();
@@ -302,31 +331,31 @@
         });
     }
 
-    function copyConvertResult(id, sid) {
-        const area = document.getElementById(id);
-        area.select();
-        navigator.clipboard.writeText(area.value).then(() => {
-            const s = document.getElementById(sid); s.innerText = "Đã copy! ✅"; s.style.color = "#28a745";
-            setTimeout(() => s.innerText = "", 2000);
-        });
-    }
-
     function clearTool(n) {
         if (n === 1) { svcFiles = []; document.getElementById('file-svc').value = ""; document.getElementById('svc-list').innerText = ""; document.getElementById('table-svc-body').innerHTML = ""; }
         else if (n === 2) { fileG5 = null; fileFX = null; document.getElementById('file-g5').value = ""; document.getElementById('file-fx').value = ""; document.getElementById('g5-name').innerText = ""; document.getElementById('fx-name').innerText = ""; document.getElementById('table-g5fx-body').innerHTML = ""; }
         else if (n === 3) { 
             const inp = document.getElementById('inputText');
-            inp.value = ""; document.getElementById('outputText').value = ""; document.getElementById('warning-msg-t3').innerHTML = ""; 
+            inp.value = ""; document.getElementById('output-list-t3').innerHTML = ""; document.getElementById('warning-msg-t3').innerHTML = ""; 
             window.getSelection().removeAllRanges();
             setTimeout(() => { inp.focus(); }, 0);
         }
         else if (n === 4) { 
             const inp = document.getElementById('inputTextT4');
-            inp.value = ""; document.getElementById('outputTextT4').value = ""; document.getElementById('warning-msg-t4').innerHTML = ""; 
+            inp.value = ""; document.getElementById('output-list-t4').innerHTML = ""; document.getElementById('warning-msg-t4').innerHTML = ""; 
             window.getSelection().removeAllRanges();
             setTimeout(() => { inp.focus(); }, 0);
         }
     }
+
+    // Phím tắt ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === "Escape") {
+            const activeTab = document.querySelector('.tool-section.active');
+            if (activeTab && activeTab.id === "section3") { e.preventDefault(); clearTool(3); }
+            else if (activeTab && activeTab.id === "section4") { e.preventDefault(); clearTool(4); }
+        }
+    });
 </script>
 </body>
 </html>
