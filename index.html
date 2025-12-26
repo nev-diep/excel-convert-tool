@@ -151,7 +151,62 @@
         document.getElementById('section' + n).classList.add('active');
         document.getElementById('tab' + n + '-btn').classList.add('active');
     }
+// --- THÊM PHÍM TẮT ESC ---
+    document.addEventListener('keydown', function(e) {
+        if (e.key === "Escape") {
+            // Xác định tab nào đang mở để clear tab đó
+            const activeTab = document.querySelector('.tool-section.active');
+            if (activeTab.id === "section3") clearTool(3);
+            if (activeTab.id === "section4") clearTool(4);
+        }
+    });
 
+    // --- CẬP NHẬT HÀM CHUYỂN TAB ĐỂ TỰ ĐỘNG FOCUS ---
+    function showTab(n) {
+        document.querySelectorAll('.tool-section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('active'));
+        document.getElementById('section' + n).classList.add('active');
+        document.getElementById('tab' + n + '-btn').classList.add('active');
+        
+        // Tự động focus khi chuyển tab
+        if (n === 3) document.getElementById('inputText').focus();
+        if (n === 4) document.getElementById('inputTextT4').focus();
+    }
+
+    // --- CẬP NHẬT HÀM CLEARTOOL ---
+    function clearTool(n) {
+        if (n === 1) { 
+            svcFiles = []; 
+            document.getElementById('file-svc').value = ""; 
+            document.getElementById('svc-list').innerText = ""; 
+            document.getElementById('table-svc-body').innerHTML = ""; 
+        }
+        else if (n === 2) { 
+            fileG5 = null; 
+            fileFX = null; 
+            document.getElementById('file-g5').value = ""; 
+            document.getElementById('file-fx').value = ""; 
+            document.getElementById('g5-name').innerText = ""; 
+            document.getElementById('fx-name').innerText = ""; 
+            document.getElementById('table-g5fx-body').innerHTML = ""; 
+        }
+        else if (n === 3) { 
+            const inputT3 = document.getElementById('inputText');
+            inputT3.value = ""; 
+            document.getElementById('outputText').value = ""; 
+            document.getElementById('warning-msg-t3').innerHTML = ""; 
+            document.getElementById('copy-status-t3').innerText = "";
+            inputT3.focus(); // Focus ngay lập tức
+        }
+        else if (n === 4) { 
+            const inputT4 = document.getElementById('inputTextT4');
+            inputT4.value = ""; 
+            document.getElementById('outputTextT4').value = ""; 
+            document.getElementById('warning-msg-t4').innerHTML = ""; 
+            document.getElementById('copy-status-t4').innerText = "";
+            inputT4.focus(); // Focus ngay lập tức
+        }
+    }
     // --- LOGIC CẢNH BÁO DÙNG CHUNG ---
     function generateWarnings(lines) {
         let warns = [];
