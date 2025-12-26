@@ -218,26 +218,52 @@
 
     inputArea.addEventListener('input', function() {
         const rawText = inputArea.value;
+        if (!rawText) {
+            outputArea.value = "";
+            warningMsg.style.display = "none";
+            return;
+        }
+
         // XỬ LÝ TRIM TỪNG DÒNG MỘT
-        const result = rawText.split('\n').map(line => {
+        const lines = rawText.split('\n');
+        const processedLines = lines.map(line => {
             return line
                 .replace(/[、。ァ-ヺ・ー゛゜]/g, ch => katakanaMap[ch] || ch)
                 .replace(/　/g, ' ')
                 .replace(/[！-～]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0))
                 .replace(/,/g, '､')
                 .trim();
-        }).join('\n');
+        });
 
+        const result = processedLines.join('\n');
         outputArea.value = result;
         
-        // Kiểm tra Rule cảnh báo
+        // KIỂM TRA LỖI VÀ TRÍCH DẪN CỤ THỂ
         let warns = [];
-        if (result.includes("  ")) warns.push("⚠️ [FORMAT] Có 2 dấu cách liên tiếp");
-        if (/[A-Za-z0-9]ｰ|ｰ[A-Za-z0-9]/.test(result)) warns.push("🚫 [DRAWING] 'ｰ' không được dùng trong mã kỹ thuật");
-        if (/[ｦ-ﾟ一-龯]-[ｦ-ﾟ一-龯]/.test(result)) warns.push("🚫 [DRAWING] '-' dùng nối tiếng Nhật không phù hợp");
+        
+        // RULE 1: 2 dấu cách liên tiếp
+        if (result.includes("  ")) {
+            warns.push(`⚠️ [FORMAT] Phát hiện 2 dấu cách liên tiếp: "<span style="color:red; background:#ffeded">  </span>"`);
+        }
 
+        // RULE 2: 'ｰ' sai vị trí (Mã kỹ thuật)
+        const techError = result.match(/[A-Za-z0-9]ｰ|ｰ[A-Za-z0-9]/g);
+        if (techError) {
+            // Lấy các lỗi duy nhất (unique)
+            const uniqueErrors = [...new Set(techError)];
+            warns.push(`🚫 [DRAWING] Ký tự '<span style="color:red">ｰ</span>' bị cấm trong mã: ${uniqueErrors.map(e => `<b style="color:red">${e}</b>`).join(", ")}`);
+        }
+
+        // RULE 3: '-' nối tiếng Nhật
+        const jpJoinError = result.match(/[ｦ-ﾟ一-龯]-[ｦ-ﾟ一-龯]/g);
+        if (jpJoinError) {
+            const uniqueErrors = [...new Set(jpJoinError)];
+            warns.push(`🚫 [DRAWING] Dấu '<span style="color:red">-</span>' nối chữ Nhật sai: ${uniqueErrors.map(e => `<b style="color:red">${e}</b>`).join(", ")}`);
+        }
+
+        // Hiển thị cảnh báo
         if (warns.length > 0) {
-            warningMsg.innerHTML = warns.join("<br>");
+            warningMsg.innerHTML = warns.join("<hr style='border:0; border-top:1px solid #ffc1c1; margin:5px 0'>");
             warningMsg.style.display = "block";
         } else {
             warningMsg.style.display = "none";
