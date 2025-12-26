@@ -161,19 +161,7 @@
         }
     });
 
-    // --- CẬP NHẬT HÀM CHUYỂN TAB ĐỂ TỰ ĐỘNG FOCUS ---
-    function showTab(n) {
-        document.querySelectorAll('.tool-section').forEach(s => s.classList.remove('active'));
-        document.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('active'));
-        document.getElementById('section' + n).classList.add('active');
-        document.getElementById('tab' + n + '-btn').classList.add('active');
-        
-        // Tự động focus khi chuyển tab
-        if (n === 3) document.getElementById('inputText').focus();
-        if (n === 4) document.getElementById('inputTextT4').focus();
-    }
-
-    // --- CẬP NHẬT HÀM CLEARTOOL ---
+// Cập nhật hàm ClearTool để ép Focus về đúng ô Input
     function clearTool(n) {
         if (n === 1) { 
             svcFiles = []; 
@@ -196,7 +184,11 @@
             document.getElementById('outputText').value = ""; 
             document.getElementById('warning-msg-t3').innerHTML = ""; 
             document.getElementById('copy-status-t3').innerText = "";
-            inputT3.focus(); // Focus ngay lập tức
+            
+            // Xóa mọi lựa chọn (bôi đen) hiện có trên màn hình
+            window.getSelection().removeAllRanges();
+            // Ép focus về Input
+            inputT3.focus();
         }
         else if (n === 4) { 
             const inputT4 = document.getElementById('inputTextT4');
@@ -204,9 +196,28 @@
             document.getElementById('outputTextT4').value = ""; 
             document.getElementById('warning-msg-t4').innerHTML = ""; 
             document.getElementById('copy-status-t4').innerText = "";
-            inputT4.focus(); // Focus ngay lập tức
+            
+            // Xóa mọi lựa chọn (bôi đen) hiện có trên màn hình
+            window.getSelection().removeAllRanges();
+            // Ép focus về Input
+            inputT4.focus();
         }
     }
+
+    // Đảm bảo phím Esc gọi đúng hàm Clear đã nâng cấp
+    document.addEventListener('keydown', function(e) {
+        if (e.key === "Escape") {
+            const activeTab = document.querySelector('.tool-section.active');
+            if (activeTab.id === "section3") {
+                e.preventDefault(); // Ngăn chặn hành động mặc định của trình duyệt nếu có
+                clearTool(3);
+            }
+            if (activeTab.id === "section4") {
+                e.preventDefault();
+                clearTool(4);
+            }
+        }
+    });
     // --- LOGIC CẢNH BÁO DÙNG CHUNG ---
     function generateWarnings(lines) {
         let warns = [];
