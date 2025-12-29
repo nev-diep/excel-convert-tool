@@ -226,24 +226,20 @@ async function processG5FX() {
 function processTab3(line) {
     if (!line) return "";
     
-    // 1. Chuẩn hóa NFKC giúp tách các ký tự có dấu (VD: ド thành ﾄ + ﾞ)
-    // 2. Ép các ký tự ASCII Full-width sang Half-width
-    let result = line.normalize('NFKC').replace(/[！-～]/g, function(s) {
+    // 1. Dùng NFKC để ép toàn bộ về chuẩn Narrow (Bao gồm cả Katakana có dấu)
+    // 2. Chuyển ASCII Full-width (！-～) sang Half-width
+    let res = line.normalize('NFKC').replace(/[！-～]/g, function(s) {
         return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
     });
 
-    // 3. Chuyển khoảng trắng Full-width sang Half-width
-    result = result.replace(/　/g, ' ');
+    // 3. Chuyển dấu phẩy đặc biệt theo yêu cầu
+    res = res.replace(/,/g, '､').replace(/　/g, ' ');
 
-    // 4. Chuyển dấu phẩy "," sang "､" theo yêu cầu riêng
-    result = result.replace(/,/g, '､');
-
-    // 5. Duyệt và ép nốt các ký tự Katakana Nhật còn sót sang Half-width qua bảng f2hMap
+    // 4. Đảm bảo các ký tự Nhật còn sót (nếu có) qua f2hMap
     let finalOut = "";
-    for (let ch of result) {
+    for (let ch of res) {
         finalOut += f2hMap[ch] || ch;
     }
-
     return finalOut.trim();
 }
 
@@ -321,26 +317,23 @@ function handleProcess(tabNum) {
         out.appendChild(oRow);
         const wRow = document.createElement('div');
         wRow.className = 'line-item warn-item';
-  if (res.trim() !== "") {
-    let warnings = [];
+if (res.trim() !== "") {
+            let warnings = [];
+            if (res.includes("  ")) warnings.push("🚫 Space x2");
 
-    // Cảnh báo chung
-    if (res.includes("  ")) warnings.push("🚫 Space x2");
-
-    // Cảnh báo riêng cho Tab 3 (Dùng dải mã ｦ-ﾟ để nhận diện Katakana Narrow)
-    if (tabNum === 3) {
-        if (/(?:[A-Za-z0-9]ｰ|ｰ[A-Za-z0-9])/.test(res)) warnings.push("🚫 Lỗi ｰ");
-        if (/[ｦ-ﾟ]-[ｦ-ﾟ]/.test(res)) warnings.push("🚫 Lỗi nối -");
-    } 
-    // Cảnh báo riêng cho Tab 4 (Dùng dải mã chữ Nhật Wide)
-    else if (tabNum === 4) {
-        if (/(?:[A-Za-z0-9]ｰ|ｰ[A-Za-z0-9])/.test(res)) warnings.push("🚫 Lỗi ｰ");
-        if (/[ぁ-ゖァ-ヺ一-龯]-[ぁ-ゖァ-ヺ一-龯]/.test(res)) warnings.push("🚫 Lỗi nối -");
-    }
-
-    if (/－/.test(res)) warnings.push("🚫 Full-width dash");
-    wRow.innerText = warnings.join(" ");
-}
+            if (tabNum === 3) {
+                // Tab 3: Dùng dải mã ｦ-ﾟ để bắt lỗi trên ký tự Half-width
+                if (/(?:[A-Za-z0-9]ｰ|ｰ[A-Za-z0-9])/.test(res)) warnings.push("🚫 Lỗi ｰ");
+                if (/[ｦ-ﾟ]-[ｦ-ﾟ]/.test(res)) warnings.push("🚫 Lỗi nối -");
+            } else {
+                // Tab 4: Dùng dải mã Full-width như cũ
+                if (/(?:[A-Za-z0-9]ｰ|ｰ[A-Za-z0-9])/.test(res)) warnings.push("🚫 Lỗi ｰ");
+                if (/[ぁ-ゖァ-ヺ一-龯]-[ぁ-ゖァ-ヺ一-龯]/.test(res)) warnings.push("🚫 Lỗi nối -");
+            }
+            
+            if (/－/.test(res)) warnings.push("🚫 Full-width dash");
+            wRow.innerText = warnings.join(" ");
+        }
         warn.appendChild(wRow);
     });
 }
