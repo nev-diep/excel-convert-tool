@@ -226,17 +226,21 @@ async function processG5FX() {
 function processTab3(line) {
     if (!line) return "";
     
+    // 1. Chuẩn hóa NFKC giúp tách các ký tự có dấu (VD: ド thành ﾄ + ﾞ)
+    // 2. Ép các ký tự ASCII Full-width sang Half-width
     let result = line.normalize('NFKC').replace(/[！-～]/g, function(s) {
         return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
     });
 
+    // 3. Chuyển khoảng trắng Full-width sang Half-width
     result = result.replace(/　/g, ' ');
 
+    // 4. Chuyển dấu phẩy "," sang "､" theo yêu cầu riêng
     result = result.replace(/,/g, '､');
 
+    // 5. Duyệt và ép nốt các ký tự Katakana Nhật còn sót sang Half-width qua bảng f2hMap
     let finalOut = "";
     for (let ch of result) {
-        // Tra bảng f2hMap nếu là Katakana Full-width đơn lẻ
         finalOut += f2hMap[ch] || ch;
     }
 
