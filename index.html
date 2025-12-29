@@ -226,42 +226,40 @@ async function processG5FX() {
 function processTab3(line) {
     if (!line) return "";
 
-    // 1. Tách dakuten / handakuten (rất quan trọng)
+    // 1. NFKD tách rời các ký tự phức hợp (VD: ド thành ト + dấu)
     const src = line.normalize('NFKD');
-
     let out = "";
 
     for (let ch of src) {
+        let c = ch;
 
-        // ASCII full-width → half-width
-        let c = toHalfASCII(ch);
-
-        // Space full-width → half-width
-        c = normalizeSpace(c, "half");
-
-        // Katakana full-width → half-width (base)
-        if (f2hMap[c]) {
-            out += f2hMap[c];
-            continue;
-        }
-
-        // Dakuten / Handakuten
-        if (c === '\u3099') { // ゙
-            out += 'ﾞ';
-            continue;
-        }
-        if (c === '\u309A') { // ゚
-            out += 'ﾟ';
-            continue;
-        }
-
-        // Dấu phẩy
+        // Xử lý dấu phẩy trước (theo yêu cầu riêng của bạn)
         if (c === ',') {
             out += '､';
             continue;
         }
 
-        out += c;
+        // ASCII full-width → half-width
+        c = toHalfASCII(c);
+
+        // Space full-width → half-width
+        c = normalizeSpace(c, "half");
+
+        // Tra bảng f2hMap cho Katakana cơ bản (ト, ア, v.v.)
+        if (f2hMap[c]) {
+            out += f2hMap[c];
+        } 
+        // Xử lý dấu nối âm (Dakuten) sau khi đã tách bằng NFKD
+        else if (c === '\u3099') { // Dấu ﾞ
+            out += 'ﾞ';
+        } 
+        // Xử lý dấu tròn (Handakuten) sau khi đã tách bằng NFKD
+        else if (c === '\u309A') { // Dấu ﾟ
+            out += 'ﾟ';
+        } 
+        else {
+            out += c;
+        }
     }
 
     return out.trim();
