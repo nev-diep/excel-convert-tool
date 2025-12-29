@@ -225,15 +225,22 @@ async function processG5FX() {
 
 function processTab3(line) {
     if (!line) return "";
-    let out = "";
-    for (const ch of line) {
-        let c = toHalfASCII(ch);
-        c = normalizeSpace(c, "half");
-        if (f2hMap[c]) c = f2hMap[c];
-        if (c === ',') c = '､';
-        out += c;
+    
+    let result = line.normalize('NFKC').replace(/[！-～]/g, function(s) {
+        return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+    });
+
+    result = result.replace(/　/g, ' ');
+
+    result = result.replace(/,/g, '､');
+
+    let finalOut = "";
+    for (let ch of result) {
+        // Tra bảng f2hMap nếu là Katakana Full-width đơn lẻ
+        finalOut += f2hMap[ch] || ch;
     }
-    return out.trim();
+
+    return finalOut.trim();
 }
 
 function processTab4(line) {
@@ -310,30 +317,24 @@ function handleProcess(tabNum) {
         out.appendChild(oRow);
         const wRow = document.createElement('div');
         wRow.className = 'line-item warn-item';
-        if (res.trim() !== "") {
+  if (res.trim() !== "") {
     let warnings = [];
 
-    // 1. Kiểm tra Space thừa (Hoạt động cho cả Tab 3 và 4)
-    if (res.includes("  ")) {
-        warnings.push("🚫Cẩn thận! Đang có 2 dấu cách liền nhau!");
+    // Cảnh báo chung
+    if (res.includes("  ")) warnings.push("🚫 Space x2");
+
+    // Cảnh báo riêng cho Tab 3 (Dùng dải mã ｦ-ﾟ để nhận diện Katakana Narrow)
+    if (tabNum === 3) {
+        if (/(?:[A-Za-z0-9]ｰ|ｰ[A-Za-z0-9])/.test(res)) warnings.push("🚫 Lỗi ｰ");
+        if (/[ｦ-ﾟ]-[ｦ-ﾟ]/.test(res)) warnings.push("🚫 Lỗi nối -");
+    } 
+    // Cảnh báo riêng cho Tab 4 (Dùng dải mã chữ Nhật Wide)
+    else if (tabNum === 4) {
+        if (/(?:[A-Za-z0-9]ｰ|ｰ[A-Za-z0-9])/.test(res)) warnings.push("🚫 Lỗi ｰ");
+        if (/[ぁ-ゖァ-ヺ一-龯]-[ぁ-ゖァ-ヺ一-龯]/.test(res)) warnings.push("🚫 Lỗi nối -");
     }
 
-    // 2. Kiểm tra dấu ｰ (Half-width) cạnh chữ/số (Lỗi thường gặp ở Tab 3)
-    if (/(?:[A-Za-z0-9]ｰ|ｰ[A-Za-z0-9])/.test(res)) {
-        warnings.push("🚫Cẩn thận! Đang có dấu ｰ nối giữa Romanji");
-    }
-
-    // 3. Kiểm tra dấu nối "-" giữa các khối chữ Nhật (Cả Tab 3 và 4)
-    // Regex này bao quát cả Katakana bán giác (ｦ-ﾟ) và chữ Nhật Full-width
-    if (/[ｦ-ﾟぁ-ゖァ-ヺ一-龯]-[ｦ-ﾟぁ-ゖァ-ヺ一-龯]/.test(res)) {
-        warnings.push("🚫Cẩn thận! Đang có dấu - nối giữa chữ Nhật");
-    }
-
-    // 4. Cảnh báo riêng cho Tab 3: Nếu vẫn còn sót ký tự Full-width
-    if (tabNum === 3 && /[！-～]/.test(res)) {
-        warnings.push("🚫 Còn chữ Full-width");
-    }
-
+    if (/－/.test(res)) warnings.push("🚫 Full-width dash");
     wRow.innerText = warnings.join(" ");
 }
         warn.appendChild(wRow);
