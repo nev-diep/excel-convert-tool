@@ -137,7 +137,7 @@
 </div>
 
 <script>
-const h2fMap = {'ｱ':'ア','ｲ':'イ','ｳ':'ウ','ｴ':'エ','ｵ':'オ','ｶ':'カ','ｷ':'キ','ｸ':'ク','ｹ':'ケ','ｺ':'コ','ｻ':'サ','ｼ':'シ','ｽ':'ス','ｾ':'セ','ｿ':'ソ','ﾀ':'タ','ﾁ':'チ','ﾂ':'ツ','ﾃ':'テ','ﾄ':'ト','ﾅ':'ナ','ﾆ':'ニ','ﾇ':'ヌ','ﾈ':'ネ','ﾉ':'ノ','ﾊ':'ハ','ﾋ':'ヒ','ﾌ':'フ','ﾍ':'ヘ','ﾎ':'ホ','ﾏ':'マ','ﾐ':'ミ','ﾑ':'ム','ﾒ':'メ','ﾓ':'モ','ﾔ':'ヤ','ﾕ':'ユ','ﾖ':'ヨ','ﾗ':'ラ','ﾘ':'リ','ﾙ':'ル','ﾚ':'レ','ﾛ':'ロ','ﾜ':'ワ','ｦ':'ヲ','ﾝ':'ン','ｧ':'ァ','ｨ':'ィ','ｩ':'ゥ','ｪ':'ェ','ｫ':'ォ','ｬ':'ャ','ュ':'ュ','ョ':'ョ','ｯ':'ッ','ｰ':'ー','ﾞ':'゛','ﾟ':'゜','､':'、','｡':'。','･':'・','｢':'「','｣':'」'};
+const h2fMap = {'ｱ':'ア','ｲ':'イ','ｳ':'ウ','ｴ':'エ','ｵ':'オ','ｶ':'カ','ｷ':'キ','ｸ':'ク','ｹ':'ケ','ｺ':'コ','ｻ':'サ','ｼ':'シ','ｽ':'ス','ｾ':'セ','ｿ':'ソ','ﾀ':'タ','ﾁ':'チ','ﾂ':'ツ','ﾃ':'テ','ﾄ':'ト','ﾅ':'ナ','ﾆ':'ニ','ﾇ':'ヌ','ﾈ':'ネ','ﾉ':'ノ','ﾊ':'ハ','ﾋ':'ヒ','ﾌ':'フ','ﾍ':'ヘ','ﾎ':'ホ','ﾏ':'マ','ﾐ':'ミ','ﾑ':'ム','ﾒ':'メ','ﾓ':'モ','ﾔ':'ヤ','ﾕ':'ユ','ﾖ':'ヨ','ﾗ':'ラ','ﾘ':'リ','ﾙ':'ル','ﾚ':'レ','ﾛ':'ロ','ﾜ':'ワ','ｦ':'ヲ','ﾝ':'ン','ｧ':'ァ','ｨ':'ィ','ｩ':'ゥ','ｪ':'ェ','ｫ':'ォ','ｬ':'ャ','ｭ':'ュ','ｮ':'ョ','ｯ':'ッ','ｰ':'ー','ﾞ':'゛','ﾟ':'゜','､':'、','｡':'。','･':'・','｢':'「','｣':'」'};
 const f2hMap = Object.fromEntries(Object.entries(h2fMap).map(([k, v]) => [v, k]));
 let svcFiles = [];
 
@@ -226,45 +226,44 @@ async function processG5FX() {
 function processTab3(line) {
     if (!line) return "";
 
-    // 1. NFKD tách rời các ký tự phức hợp (VD: ド thành ト + dấu)
+    // 1. Dùng NFKD để tách các ký tự phức hợp (Ví dụ: ド thành ト + ﾞ)
+    // Điều này giúp xử lý các ký tự nhỏ và ký tự có dấu cực kỳ ổn định
     const src = line.normalize('NFKD');
     let out = "";
 
     for (let ch of src) {
         let c = ch;
 
-        // Xử lý dấu phẩy trước (theo yêu cầu riêng của bạn)
+        // Ưu tiên xử lý dấu phẩy theo yêu cầu riêng
         if (c === ',') {
             out += '､';
             continue;
         }
 
-        // ASCII full-width → half-width
-        c = toHalfASCII(c);
+        // Chuyển ASCII Full-width sang Half-width (A -> A, 1 -> 1...)
+        const code = c.charCodeAt(0);
+        if (code >= 0xFF01 && code <= 0xFF5E) {
+            c = String.fromCharCode(code - 0xFEE0);
+        } else if (c === '　') {
+            c = ' ';
+        }
 
-        // Space full-width → half-width
-        c = normalizeSpace(c, "half");
-
-        // Tra bảng f2hMap cho Katakana cơ bản (ト, ア, v.v.)
+        // Kiểm tra trong bảng f2hMap (Bao gồm cả ャ ュ ョ ッ)
         if (f2hMap[c]) {
             out += f2hMap[c];
         } 
-        // Xử lý dấu nối âm (Dakuten) sau khi đã tách bằng NFKD
+        // Xử lý thủ công dấu biến âm nếu NFKD đã tách ra
         else if (c === '\u3099') { // Dấu ﾞ
             out += 'ﾞ';
-        } 
-        // Xử lý dấu tròn (Handakuten) sau khi đã tách bằng NFKD
-        else if (c === '\u309A') { // Dấu ﾟ
+        } else if (c === '\u309A') { // Dấu ﾟ
             out += 'ﾟ';
-        } 
-        else {
+        } else {
             out += c;
         }
     }
 
     return out.trim();
 }
-
 function processTab4(line) {
     if (!line) return "";
     let tmp = "";
