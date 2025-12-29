@@ -226,25 +226,45 @@ async function processG5FX() {
 function processTab3(line) {
     if (!line) return "";
 
-    let res = line.normalize('NFKD');
+    // 1. Tách dakuten / handakuten (rất quan trọng)
+    const src = line.normalize('NFKD');
 
     let out = "";
-    for (let ch of res) {
-        if (fw2hwKana[ch]) {
-            out += fw2hwKana[ch];
-        } else if (ch === '\u3099') {
-            out += 'ﾞ';
-        } else if (ch === '\u309A') {
-            out += 'ﾟ';
-        } else {
-            out += ch;
+
+    for (let ch of src) {
+
+        // ASCII full-width → half-width
+        let c = toHalfASCII(ch);
+
+        // Space full-width → half-width
+        c = normalizeSpace(c, "half");
+
+        // Katakana full-width → half-width (base)
+        if (f2hMap[c]) {
+            out += f2hMap[c];
+            continue;
         }
+
+        // Dakuten / Handakuten
+        if (c === '\u3099') { // ゙
+            out += 'ﾞ';
+            continue;
+        }
+        if (c === '\u309A') { // ゚
+            out += 'ﾟ';
+            continue;
+        }
+
+        // Dấu phẩy
+        if (c === ',') {
+            out += '､';
+            continue;
+        }
+
+        out += c;
     }
 
-    return out
-        .replace(/,/g, '､')
-        .replace(/　/g, ' ')
-        .trim();
+    return out.trim();
 }
 
 function processTab4(line) {
