@@ -225,22 +225,26 @@ async function processG5FX() {
 
 function processTab3(line) {
     if (!line) return "";
-    
-    // 1. Dùng NFKC để ép toàn bộ về chuẩn Narrow (Bao gồm cả Katakana có dấu)
-    // 2. Chuyển ASCII Full-width (！-～) sang Half-width
-    let res = line.normalize('NFKC').replace(/[！-～]/g, function(s) {
-        return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
-    });
 
-    // 3. Chuyển dấu phẩy đặc biệt theo yêu cầu
-    res = res.replace(/,/g, '､').replace(/　/g, ' ');
+    let res = line.normalize('NFKD');
 
-    // 4. Đảm bảo các ký tự Nhật còn sót (nếu có) qua f2hMap
-    let finalOut = "";
+    let out = "";
     for (let ch of res) {
-        finalOut += f2hMap[ch] || ch;
+        if (fw2hwKana[ch]) {
+            out += fw2hwKana[ch];
+        } else if (ch === '\u3099') {
+            out += 'ﾞ';
+        } else if (ch === '\u309A') {
+            out += 'ﾟ';
+        } else {
+            out += ch;
+        }
     }
-    return finalOut.trim();
+
+    return out
+        .replace(/,/g, '､')
+        .replace(/　/g, ' ')
+        .trim();
 }
 
 function processTab4(line) {
