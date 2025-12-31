@@ -225,22 +225,21 @@ async function processG5FX() {
 
 function processTab3(line) {
     if (!line) return "";
-
+    
     // 1. Dùng NFKD để tách các ký tự phức hợp (Ví dụ: ド thành ト + ﾞ)
-    // Điều này giúp xử lý các ký tự nhỏ và ký tự có dấu cực kỳ ổn định
     const src = line.normalize('NFKD');
     let out = "";
 
     for (let ch of src) {
         let c = ch;
 
-        // Ưu tiên xử lý dấu phẩy theo yêu cầu riêng
+        // Ưu tiên xử lý dấu phẩy
         if (c === ',') {
             out += '､';
             continue;
         }
 
-        // Chuyển ASCII Full-width sang Half-width (A -> A, 1 -> 1...)
+        // Chuyển ASCII & Space Full-width
         const code = c.charCodeAt(0);
         if (code >= 0xFF01 && code <= 0xFF5E) {
             c = String.fromCharCode(code - 0xFEE0);
@@ -248,21 +247,19 @@ function processTab3(line) {
             c = ' ';
         }
 
-        // Kiểm tra trong bảng f2hMap (Bao gồm cả ャ ュ ョ ッ)
+        // Tra bảng f2hMap
         if (f2hMap[c]) {
             out += f2hMap[c];
         } 
-        // Xử lý thủ công dấu biến âm nếu NFKD đã tách ra
-        else if (c === '\u3099') { // Dấu ﾞ
-            out += 'ﾞ';
-        } else if (c === '\u309A') { // Dấu ﾟ
-            out += 'ﾟ';
-        } else {
+        else if (c === '\u3099') { out += 'ﾞ'; } // Dấu ﾞ
+        else if (c === '\u309A') { out += 'ﾟ'; } // Dấu ﾟ
+        else {
             out += c;
         }
     }
-
-    return out.trim();
+    
+    // THÊM: Dồn nhiều dấu cách thành 1 và trim hai đầu
+    return out.replace(/ +/g, ' ').trim();
 }
 function processTab4(line) {
     if (!line) return "";
@@ -340,19 +337,38 @@ function handleProcess(tabNum) {
         wRow.className = 'line-item warn-item';
 if (res.trim() !== "") {
             let warnings = [];
-            if (res.includes("  ")) warnings.push("🚫 Space x2");
-
-            if (tabNum === 3) {
-                // Tab 3: Dùng dải mã ｦ-ﾟ để bắt lỗi trên ký tự Half-width
-                if (/(?:[A-Za-z0-9]ｰ|ｰ[A-Za-z0-9])/.test(res)) warnings.push("🚫 Lỗi ｰ");
-                if (/[ｦ-ﾟ]-[ｦ-ﾟ]/.test(res)) warnings.push("🚫 Lỗi nối -");
-            } else {
-                // Tab 4: Dùng dải mã Full-width như cũ
-                if (/(?:[A-Za-z0-9]ｰ|ｰ[A-Za-z0-9])/.test(res)) warnings.push("🚫 Lỗi ｰ");
-                if (/[ぁ-ゖァ-ヺ一-龯]-[ぁ-ゖァ-ヺ一-龯]/.test(res)) warnings.push("🚫 Lỗi nối -");
-            }
             
-            if (/－/.test(res)) warnings.push("🚫 Full-width dash");
+            if (tabNum === 3) {
+                // --- CẢNH BÁO RIÊNG CHO TAB 3 ---
+                // Kiểm tra xem còn ký tự Full-width nào không (Trừ các ký tự đặc biệt nếu cần)
+                // Dải mã: \u3000-\u303F (Symbols), \u3040-\u309F (Hiragana), \u30A0-\u30FF (Katakana), \uFF00-\uFFEF (Full-width forms)
+                const fullWidthPattern = /[\u3000-\u30FF\uFF00-\uFFEF]/;
+                if (fullWidthPattern.test(res)) {
+                    // Tìm ký tự lỗi đầu tiên để báo cho người dùng biết
+                    const errorChar = res.match(fullWidthPattern)[0];
+                    warnings.push(`🚫 Còn ký tự Full-width: "${errorChar}"`);
+                }
+            } else {
+                // --- CẢNH BÁO CHO CÁC TAB KHÁC (TAB 4...) ---
+                // Giữ lại cảnh báo dấu cách cho Tab 4
+                if (res.includes("  ")) {
+                    warnings.push("🚫 Cẩn thận! Đang có 2 dấu cách liền nhau");
+                }
+                
+                // Cảnh báo dấu - lẫn trong chữ Nhật
+                if (/[ぁ-ゖァ-ヺ一-龯]-[ぁ-ゖァ-ヺ一-龯]/.test(res)) {
+                    warnings.push("🚫 Cẩn thận! Đang có dấu - lẫn trong chữ Nhật");
+                }
+            }
+
+            // Cảnh báo dùng chung (nếu có)
+            if (/(?:[A-Za-z0-9]ｰ|ｰ[A-Za-z0-9])/.test(res)) {
+                warnings.push("🚫 Cẩn thận! Đang có dấu ｰ lẫn trong mã máy");
+            }
+            if (/－/.test(res)) {
+                warnings.push("🚫 Full-width dash");
+            }
+
             wRow.innerText = warnings.join(" ");
         }
         warn.appendChild(wRow);
