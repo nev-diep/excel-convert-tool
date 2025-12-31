@@ -225,13 +225,31 @@ async function processG5FX() {
 
 function processTab3(line) {
     if (!line) return "";
-    
+
+    // Bảng thay thế thủ công các chữ Katakana có dấu (Dakuten/Handakuten)
+    const dakutenMap = {
+        'ガ':'ｶﾞ','ギ':'ｷﾞ','グ':'ｸﾞ','ゲ':'ｹﾞ','ゴ':'ｺﾞ',
+        'ザ':'ｻﾞ','ジ':'ｼﾞ','ズ':'ｽﾞ','ゼ':'ｾﾞ','ゾ':'ｿﾞ',
+        'ダ':'ﾀﾞ','ヂ':'ﾁﾞ','ヅ':'ﾂﾞ','デ':'ﾃﾞ','ド':'ﾄﾞ',
+        'バ':'ﾊﾞ','ビ':'ﾋﾞ','ブ':'ﾌﾞ','ベ':'ﾍﾞ','ボ':'ﾎﾞ',
+        'パ':'ﾊﾟ','ピ':'ﾋﾟ','プ':'ﾌﾟ','ペ':'ﾍﾟ','ポ':'ﾎﾟ',
+        'ヴ':'ｳﾞ'
+    };
+
+    let res = line;
+
+    // 1. Thay thế thủ công các chữ có dấu trước
+    for (let [full, half] of Object.entries(dakutenMap)) {
+        res = res.split(full).join(half);
+    }
+
     let out = "";
-    // Duyệt trực tiếp, không normalize để giữ nguyên Hiragana/Kanji
-    for (let ch of line) {
+    for (let ch of res) {
         let c = ch;
+        // 2. Xử lý dấu phẩy
         if (c === ',') { out += '､'; continue; }
 
+        // 3. Chuyển ASCII & Khoảng trắng toàn giác
         const code = c.charCodeAt(0);
         if (code >= 0xFF01 && code <= 0xFF5E) {
             c = String.fromCharCode(code - 0xFEE0);
@@ -239,13 +257,11 @@ function processTab3(line) {
             c = ' ';
         }
 
-        if (f2hMap[c]) {
-            out += f2hMap[c];
-        } else {
-            out += c;
-        }
+        // 4. Tra bảng f2hMap cho các chữ Katakana không dấu còn lại
+        out += f2hMap[c] || c;
     }
-    // Dồn dấu cách và xóa khoảng trắng thừa
+
+    // 5. Dồn nhiều dấu cách thành 1 và trim
     return out.replace(/ +/g, ' ').trim();
 }
 function processTab4(line) {
