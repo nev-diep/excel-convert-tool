@@ -225,21 +225,13 @@ async function processG5FX() {
 
 function processTab3(line) {
     if (!line) return "";
-
-    // Tách các ký tự có dấu thành phần thân + dấu rời (VD: ピ -> ヒ + ﾟ)
-    const src = line.normalize('NFKD');
+    
     let out = "";
-
-    for (let ch of src) {
+    // Duyệt trực tiếp, không normalize để giữ nguyên Hiragana/Kanji
+    for (let ch of line) {
         let c = ch;
+        if (c === ',') { out += '､'; continue; }
 
-        // Xử lý dấu phẩy đặc biệt
-        if (c === ',') {
-            out += '､';
-            continue;
-        }
-
-        // Chuyển ASCII & Khoảng trắng toàn giác
         const code = c.charCodeAt(0);
         if (code >= 0xFF01 && code <= 0xFF5E) {
             c = String.fromCharCode(code - 0xFEE0);
@@ -247,19 +239,13 @@ function processTab3(line) {
             c = ' ';
         }
 
-        // Kiểm tra bảng tra cứu hoặc ép mã dấu thanh rời
         if (f2hMap[c]) {
             out += f2hMap[c];
-        } else if (c === '\u3099') { 
-            out += 'ﾞ'; // Dấu Dakuten
-        } else if (c === '\u309A') { 
-            out += 'ﾟ'; // Dấu Handakuten
         } else {
             out += c;
         }
     }
-
-    // Dồn nhiều dấu cách thành 1 và loại bỏ khoảng trắng thừa 2 đầu
+    // Dồn dấu cách và xóa khoảng trắng thừa
     return out.replace(/ +/g, ' ').trim();
 }
 function processTab4(line) {
@@ -340,13 +326,11 @@ if (res.trim() !== "") {
             let warnings = [];
 
             if (tabNum === 3) {
-                // Regex chỉ tìm Hiragana và Katakana Full-width (U+3040 - U+30FF)
-                // Không bao gồm vùng Half-width (U+FF61 - U+FF9F)
-                const fullWidthKatakanaHiragana = /[\u3040-\u30FF]/;
+                const fullWidthKatakanaOnly = /[\u30A1-\u30FC]/;
                 
-                if (fullWidthKatakanaHiragana.test(res)) {
-                    const errorChar = res.match(fullWidthKatakanaHiragana)[0];
-                    warnings.push(`🚫 Còn ký tự Full-width: "${errorChar}"`);
+            if (fullWidthKatakanaOnly.test(res)) {
+                const errorChar = res.match(fullWidthKatakanaOnly)[0];
+                warnings.push(`🚫 Còn ký tự Katakana chưa chuyển: "${errorChar}"`);
                 }
             } else {
                 // Tab 4: Cảnh báo dấu cách và lỗi nối
