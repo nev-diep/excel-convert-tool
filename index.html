@@ -226,20 +226,17 @@ async function processG5FX() {
 function processTab3(line) {
     if (!line) return "";
     
-    // 1. Dùng NFKD để tách các ký tự phức hợp (Ví dụ: ド thành ト + ﾞ)
-    const src = line.normalize('NFKD');
     let out = "";
-
-    for (let ch of src) {
+    for (let ch of line) {
         let c = ch;
 
-        // Ưu tiên xử lý dấu phẩy
+        // 1. Ưu tiên xử lý dấu phẩy theo yêu cầu riêng
         if (c === ',') {
             out += '､';
             continue;
         }
 
-        // Chuyển ASCII & Space Full-width
+        // 2. Chuyển ASCII Full-width sang Half-width (A -> A, 1 -> 1, ! -> !)
         const code = c.charCodeAt(0);
         if (code >= 0xFF01 && code <= 0xFF5E) {
             c = String.fromCharCode(code - 0xFEE0);
@@ -247,18 +244,16 @@ function processTab3(line) {
             c = ' ';
         }
 
-        // Tra bảng f2hMap
+        // 3. CHỈ chuyển Katakana nếu nó có trong bảng f2hMap
+        // Hiragana và Kanji không có trong bảng này nên sẽ được giữ nguyên
         if (f2hMap[c]) {
             out += f2hMap[c];
-        } 
-        else if (c === '\u3099') { out += 'ﾞ'; } // Dấu ﾞ
-        else if (c === '\u309A') { out += 'ﾟ'; } // Dấu ﾟ
-        else {
+        } else {
             out += c;
         }
     }
     
-    // THÊM: Dồn nhiều dấu cách thành 1 và trim hai đầu
+    // Dồn nhiều dấu cách thành 1 và trim
     return out.replace(/ +/g, ' ').trim();
 }
 function processTab4(line) {
@@ -337,33 +332,29 @@ function handleProcess(tabNum) {
         wRow.className = 'line-item warn-item';
 if (res.trim() !== "") {
             let warnings = [];
-            
+
             if (tabNum === 3) {
-                // --- CẢNH BÁO RIÊNG CHO TAB 3 ---
-                // Kiểm tra xem còn ký tự Full-width nào không (Trừ các ký tự đặc biệt nếu cần)
-                // Dải mã: \u3000-\u303F (Symbols), \u3040-\u309F (Hiragana), \u30A0-\u30FF (Katakana), \uFF00-\uFFEF (Full-width forms)
-                const fullWidthPattern = /[\u3000-\u30FF\uFF00-\uFFEF]/;
-                if (fullWidthPattern.test(res)) {
-                    // Tìm ký tự lỗi đầu tiên để báo cho người dùng biết
-                    const errorChar = res.match(fullWidthPattern)[0];
-                    warnings.push(`🚫 Còn ký tự Full-width: "${errorChar}"`);
-                }
-            } else {
-                // --- CẢNH BÁO CHO CÁC TAB KHÁC (TAB 4...) ---
-                // Giữ lại cảnh báo dấu cách cho Tab 4
-                if (res.includes("  ")) {
-                    warnings.push("🚫 Cẩn thận! Đang có 2 dấu cách liền nhau");
-                }
+                // CẢNH BÁO TAB 3:
+                // Tìm các ký tự Full-width Katakana (ア-ン) và Hiragana (ぁ-ん) 
+                // nhưng BỎ QUA dải Half-width Katakana (｡-ﾟ) và ASCII chuẩn.
+                const fullWidthKatakanaHiragana = /[\u3040-\u30FF]/;
                 
-                // Cảnh báo dấu - lẫn trong chữ Nhật
+                if (fullWidthKatakanaHiragana.test(res)) {
+                    const errorChar = res.match(fullWidthKatakanaHiragana)[0];
+                    warnings.push(`🚫 Còn ký tự chưa chuyển: "${errorChar}"`);
+                }
+                // (Đã lược bỏ cảnh báo Space x2 cho Tab 3)
+            } else {
+                // CẢNH BÁO TAB 4:
+                if (res.includes("  ")) warnings.push("🚫 Space x2");
                 if (/[ぁ-ゖァ-ヺ一-龯]-[ぁ-ゖァ-ヺ一-龯]/.test(res)) {
-                    warnings.push("🚫 Cẩn thận! Đang có dấu - lẫn trong chữ Nhật");
+                    warnings.push("🚫 Lỗi nối -");
                 }
             }
 
-            // Cảnh báo dùng chung (nếu có)
+            // Cảnh báo chung cho dấu ｰ trong mã máy
             if (/(?:[A-Za-z0-9]ｰ|ｰ[A-Za-z0-9])/.test(res)) {
-                warnings.push("🚫 Cẩn thận! Đang có dấu ｰ lẫn trong mã máy");
+                warnings.push("🚫 Lỗi ｰ");
             }
             if (/－/.test(res)) {
                 warnings.push("🚫 Full-width dash");
