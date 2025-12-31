@@ -225,18 +225,21 @@ async function processG5FX() {
 
 function processTab3(line) {
     if (!line) return "";
-    
+
+    // Tách các ký tự có dấu thành phần thân + dấu rời (VD: ピ -> ヒ + ﾟ)
+    const src = line.normalize('NFKD');
     let out = "";
-    for (let ch of line) {
+
+    for (let ch of src) {
         let c = ch;
 
-        // 1. Ưu tiên xử lý dấu phẩy theo yêu cầu riêng
+        // Xử lý dấu phẩy đặc biệt
         if (c === ',') {
             out += '､';
             continue;
         }
 
-        // 2. Chuyển ASCII Full-width sang Half-width (A -> A, 1 -> 1, ! -> !)
+        // Chuyển ASCII & Khoảng trắng toàn giác
         const code = c.charCodeAt(0);
         if (code >= 0xFF01 && code <= 0xFF5E) {
             c = String.fromCharCode(code - 0xFEE0);
@@ -244,16 +247,19 @@ function processTab3(line) {
             c = ' ';
         }
 
-        // 3. CHỈ chuyển Katakana nếu nó có trong bảng f2hMap
-        // Hiragana và Kanji không có trong bảng này nên sẽ được giữ nguyên
+        // Kiểm tra bảng tra cứu hoặc ép mã dấu thanh rời
         if (f2hMap[c]) {
             out += f2hMap[c];
+        } else if (c === '\u3099') { 
+            out += 'ﾞ'; // Dấu Dakuten
+        } else if (c === '\u309A') { 
+            out += 'ﾟ'; // Dấu Handakuten
         } else {
             out += c;
         }
     }
-    
-    // Dồn nhiều dấu cách thành 1 và trim
+
+    // Dồn nhiều dấu cách thành 1 và loại bỏ khoảng trắng thừa 2 đầu
     return out.replace(/ +/g, ' ').trim();
 }
 function processTab4(line) {
@@ -334,31 +340,23 @@ if (res.trim() !== "") {
             let warnings = [];
 
             if (tabNum === 3) {
-                // CẢNH BÁO TAB 3:
-                // Tìm các ký tự Full-width Katakana (ア-ン) và Hiragana (ぁ-ん) 
-                // nhưng BỎ QUA dải Half-width Katakana (｡-ﾟ) và ASCII chuẩn.
+                // Regex chỉ tìm Hiragana và Katakana Full-width (U+3040 - U+30FF)
+                // Không bao gồm vùng Half-width (U+FF61 - U+FF9F)
                 const fullWidthKatakanaHiragana = /[\u3040-\u30FF]/;
                 
                 if (fullWidthKatakanaHiragana.test(res)) {
                     const errorChar = res.match(fullWidthKatakanaHiragana)[0];
-                    warnings.push(`🚫 Còn ký tự chưa chuyển: "${errorChar}"`);
+                    warnings.push(`🚫 Còn ký tự Full-width: "${errorChar}"`);
                 }
-                // (Đã lược bỏ cảnh báo Space x2 cho Tab 3)
             } else {
-                // CẢNH BÁO TAB 4:
+                // Tab 4: Cảnh báo dấu cách và lỗi nối
                 if (res.includes("  ")) warnings.push("🚫 Space x2");
-                if (/[ぁ-ゖァ-ヺ一-龯]-[ぁ-ゖァ-ヺ一-龯]/.test(res)) {
-                    warnings.push("🚫 Lỗi nối -");
-                }
+                if (/[ぁ-ゖァ-ヺ一-龯]-[ぁ-ゖァ-ヺ一-龯]/.test(res)) warnings.push("🚫 Lỗi nối -");
             }
 
-            // Cảnh báo chung cho dấu ｰ trong mã máy
-            if (/(?:[A-Za-z0-9]ｰ|ｰ[A-Za-z0-9])/.test(res)) {
-                warnings.push("🚫 Lỗi ｰ");
-            }
-            if (/－/.test(res)) {
-                warnings.push("🚫 Full-width dash");
-            }
+            // Cảnh báo chung cho dấu ｰ và dấu gạch ngang toàn giác
+            if (/(?:[A-Za-z0-9]ｰ|ｰ[A-Za-z0-9])/.test(res)) warnings.push("🚫 Lỗi ｰ");
+            if (/－/.test(res)) warnings.push("🚫 Full-width dash");
 
             wRow.innerText = warnings.join(" ");
         }
