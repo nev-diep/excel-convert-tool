@@ -341,22 +341,38 @@ function handleProcess(tabNum) {
 if (res.trim() !== "") {
             let warnings = [];
 
+            // 1. Cảnh báo riêng cho từng Tab
             if (tabNum === 3) {
-                const fullWidthKatakanaOnly = /[\u30A1-\u30FC]/;
-                
-            if (fullWidthKatakanaOnly.test(res)) {
-                const errorChar = res.match(fullWidthKatakanaOnly)[0];
-                warnings.push(`🚫 Còn ký tự Katakana chưa chuyển: "${errorChar}"`);
+                // Tab 3: Chỉ bắt lỗi Katakana Full-width chưa chuyển
+                const katakanaFullWidthOnly = /[\u30A1-\u30FC]/;
+                if (katakanaFullWidthOnly.test(res)) {
+                    const errorChar = res.match(katakanaFullWidthOnly)[0];
+                    warnings.push(`🚫 Còn Katakana chưa chuyển: "${errorChar}"`);
                 }
-            } else {
-                // Tab 4: Cảnh báo dấu cách và lỗi nối
+            } else if (tabNum === 4) {
+                // Tab 4: Cảnh báo 2 dấu cách
                 if (res.includes("  ")) warnings.push("🚫 Space x2");
-                if (/[ぁ-ゖァ-ヺ一-龯]-[ぁ-ゖァ-ヺ一-龯]/.test(res)) warnings.push("🚫 Lỗi nối -");
             }
 
-            // Cảnh báo chung cho dấu ｰ và dấu gạch ngang toàn giác
-            if (/(?:[A-Za-z0-9]ｰ|ｰ[A-Za-z0-9])/.test(res)) warnings.push("🚫 Lỗi ｰ");
-            if (/－/.test(res)) warnings.push("🚫 Full-width dash");
+            // 2. Cảnh báo CHUNG cho cả Tab 3 và Tab 4 (Yêu cầu mới)
+
+            // Lỗi nối trường âm (ｰ hoặc ー) xen giữa chữ Romanji (A-Z, a-z, 0-9)
+            // Ví dụ: ABCーDEF hoặc 123ｰ456
+            if (/[A-Za-z0-9][ｰー][A-Za-z0-9]/.test(res) || /[A-Za-z0-9][ｰー]|[ｰー][A-Za-z0-9]/.test(res)) {
+                warnings.push("🚫 Lỗi nối ｰ/ー xen giữa Romanji");
+            }
+
+            // Lỗi dùng dấu "-" (hyphen) thay cho trường âm trong Katakana
+            // Áp dụng cho cả Katakana Full-width (Tab 4) và Half-width (Tab 3)
+            const katakanaHyphenPattern = /[ァ-ヺｦ-ﾟ]-[ァ-ヺｦ-ﾟ]/;
+            if (katakanaHyphenPattern.test(res)) {
+                warnings.push("🚫 Lỗi dùng - cho trường âm Katakana");
+            }
+
+            // Cảnh báo dấu gạch ngang toàn giác (Full-width dash)
+            if (/－/.test(res)) {
+                warnings.push("🚫 Full-width dash");
+            }
 
             wRow.innerText = warnings.join(" ");
         }
