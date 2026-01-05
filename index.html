@@ -359,14 +359,15 @@ if (res.trim() !== "") {
             // Lỗi nối trường âm (ｰ hoặc ー) xen giữa chữ Romanji (A-Z, a-z, 0-9)
             // Ví dụ: ABCーDEF hoặc 123ｰ456
             if (/[A-Za-z0-9][ｰー][A-Za-z0-9]/.test(res) || /[A-Za-z0-9][ｰー]|[ｰー][A-Za-z0-9]/.test(res)) {
-                warnings.push("🚫 Lỗi nối ｰ/ー xen giữa Romanji");
+                warnings.push("🚫 Có dấu ｰ là gạch nối?");
             }
 
             // Lỗi dùng dấu "-" (hyphen) thay cho trường âm trong Katakana
             // Áp dụng cho cả Katakana Full-width (Tab 4) và Half-width (Tab 3)
-            const katakanaHyphenPattern = /[ァ-ヺｦ-ﾟ]-[ァ-ヺｦ-ﾟ]/;
+            const katakanaHyphenPattern = /[ァ-ヺｦ-ﾟ]-/; 
+
             if (katakanaHyphenPattern.test(res)) {
-                warnings.push("🚫 Lỗi dùng - cho trường âm Katakana");
+                warnings.push("🚫 Có dấu - là trường âm?");
             }
 
             // Cảnh báo dấu gạch ngang toàn giác (Full-width dash)
