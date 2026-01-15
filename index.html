@@ -184,17 +184,30 @@ document.getElementById('file-svc').onchange = e => {
 
 async function processSVC() {
     const body = document.getElementById('table-svc-body');
+    if (!body) return;
     body.innerHTML = "";
     const colMap = [19,13,14,16,18,12,21,50,51,52,53,54];
+    const fragment = document.createDocumentFragment();
     for (const f of svcFiles) {
         const data = await readExcel(f);
+        if (!data) continue;
         data.slice(5).forEach(row => {
-            if (!row || row.length < 55 || !row[19]) return;
-            const tr = body.insertRow();
-            colMap.forEach(i => tr.insertCell().innerText = row[i] || "");
-        });
+            if (!row || !row[19]) return;
+            const tr = document.createElement('tr');
+                    colMap.forEach(i => {
+                    const td = document.createElement('td');
+                    td.innerText = row[i] !== undefined ? row[i] : "";
+                    tr.appendChild(td);
+                });
+                fragment.appendChild(tr);
+            });
+        } catch (error) {
+            console.error(`Lỗi khi đọc file ${f.name}:`, error);
+        }
     }
-    alert("Xử lý xong Tab 1!");
+
+    body.appendChild(fragment); // Chèn toàn bộ dữ liệu vào DOM một lần duy nhất
+    alert("Đã xử lý xong!");
 }
 
 async function processG5FX() {
