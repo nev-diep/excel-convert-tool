@@ -173,16 +173,78 @@ async function processSVC() {
     const body = document.getElementById('table-svc-body');
     body.innerHTML = "";
     if (svcFiles.length === 0) return alert("Chưa chọn file SVC!");
-    const colMap = [19,13,14,16,18,12,21,50,51,52,53,54];
+
     for (const f of svcFiles) {
         const data = await readExcel(f);
-        data.slice(5).forEach(row => {
-            if (!row || row.length < 55 || !row[19]) return;
+        if (data.length === 0) continue;
+
+        const headerRow = data[0]; // Hàng 1 để tìm tiêu đề
+        
+        // Hàm tìm index cột dựa trên tên
+        const getCol = (name) => headerRow.findIndex(cell => String(cell).trim() === name);
+
+        // Xác định vị trí các cột
+        const idxPhys = getCol("PHYSICAL_ADDRESS");
+        const idxGG = getCol("GROUP_MANAGEMENT_CODE");
+        const idxPP = getCol("MANAGEMENT_CODE");
+        const idxUnion = getCol("UNION_GROUP_MANAGEMENT_CODE");
+        const idxIoType = getCol("IOOBJECT_TYPE_ID");
+        const idxAlarm = getCol("ALARM_POINT");
+        const idxLocal = getCol("LOCAL_OPERATION_POINT");
+        const idxUnit = getCol("UNIT");
+        const idxMin = getCol("BAU_MIN_PRES_VALUE");
+        const idxMax = getCol("BAU_MAX_PRES_VALUE");
+        const idxDigit = getCol("VALID_NUMBER_OF_DIGITS");
+
+        // Logic cho cột Display Name
+        const idxDisplayName = getCol("DISPLAY_NAME");
+        const idxPointName = getCol("POINT_NAME");
+        
+        // Kiểm tra xem hàng 6 (index 5) của cột DISPLAY_NAME có dữ liệu không
+        const useDisplayName = (idxDisplayName !== -1 && data.length > 5 && data[5][idxDisplayName]);
+
+        // Duyệt từ hàng 6 (index 5) trở đi cho đến hàng cuối cùng của file
+        for (let r = 5; r < data.length; r++) {
+            const rowData = data[r];
+            if (!rowData) continue; // Phòng trường hợp hàng rỗng hoàn toàn
+
             const tr = body.insertRow();
-            colMap.forEach(i => tr.insertCell().innerText = row[i] || "");
-        });
+
+            // 1. PHYSICAL_ADDRESS
+            tr.insertCell().innerText = idxPhys !== -1 ? (rowData[idxPhys] ?? "") : "";
+            // 2. GROUP_MANAGEMENT_CODE
+            tr.insertCell().innerText = idxGG !== -1 ? (rowData[idxGG] ?? "") : "";
+            // 3. MANAGEMENT_CODE
+            tr.insertCell().innerText = idxPP !== -1 ? (rowData[idxPP] ?? "") : "";
+            // 4. UNION_GROUP_MANAGEMENT_CODE
+            tr.insertCell().innerText = idxUnion !== -1 ? (rowData[idxUnion] ?? "") : "";
+
+            // 5. DISPLAY_NAME / POINT_NAME
+            let nameValue = "";
+            if (useDisplayName) {
+                nameValue = rowData[idxDisplayName];
+            } else if (idxPointName !== -1) {
+                nameValue = rowData[idxPointName];
+            }
+            tr.insertCell().innerText = nameValue ?? "";
+
+            // 6. IOOBJECT_TYPE_ID
+            tr.insertCell().innerText = idxIoType !== -1 ? (rowData[idxIoType] ?? "") : "";
+            // 7. ALARM_POINT
+            tr.insertCell().innerText = idxAlarm !== -1 ? (rowData[idxAlarm] ?? "") : "";
+            // 8. LOCAL_OPERATION_POINT
+            tr.insertCell().innerText = idxLocal !== -1 ? (rowData[idxLocal] ?? "") : "";
+            // 9. UNIT
+            tr.insertCell().innerText = idxUnit !== -1 ? (rowData[idxUnit] ?? "") : "";
+            // 10. BAU_MIN_PRES_VALUE
+            tr.insertCell().innerText = idxMin !== -1 ? (rowData[idxMin] ?? "") : "";
+            // 11. BAU_MAX_PRES_VALUE
+            tr.insertCell().innerText = idxMax !== -1 ? (rowData[idxMax] ?? "") : "";
+            // 12. VALID_NUMBER_OF_DIGITS
+            tr.insertCell().innerText = idxDigit !== -1 ? (rowData[idxDigit] ?? "") : "";
+        }
     }
-    alert("Xử lý xong Tab 1!");
+    alert("Đã xử lý xong!");
 }
 
 async function processG5FX() {
