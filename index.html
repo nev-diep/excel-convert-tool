@@ -33,7 +33,7 @@
         #drop-zone, .upload-box { border: 2px dashed #007bff; padding: 30px; text-align: center; margin-bottom: 15px; border-radius: 8px; background: #f0f7ff; cursor: pointer; }
         .file-info { color: #28a745; margin-top: 10px; font-size: 0.9em; font-weight: bold; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
-        th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
+        th, td { border: 1px solid #ddd; padding: 6px; text-align: left; white-space: pre; }
         th { background: #007bff; color: white; position: sticky; top: 0; }
     </style>
 </head>
@@ -282,6 +282,7 @@ function processTab3(line) {
         else if (c === '　') { c = ' '; }
         out += f2hMap[c] || c;
     }
+    return out;
 }
 
 function processTab4(line) {
