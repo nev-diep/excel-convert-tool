@@ -182,59 +182,67 @@ document.getElementById('file-svc').onchange = e => {
     document.getElementById('svc-list').innerText = "Đã chọn: " + svcFiles.map(f => f.name).join(", ");
 };
 
-async function processSVC() {
-    const body = document.getElementById('table-svc-body');
-    if (!body) return;
-    body.innerHTML = "";
-    const colMap = [19,13,14,16,18,12,21,50,51,52,53,54];
-    const fragment = document.createDocumentFragment();
-    for (const f of svcFiles) {
-        const data = await readExcel(f);
-        if (!data) continue;
-        data.slice(5).forEach(row => {
-            if (!row || !row[19]) return;
-            const tr = document.createElement('tr');
-                    colMap.forEach(i => {
-                    const td = document.createElement('td');
-                    td.innerText = row[i] !== undefined ? row[i] : "";
-                    tr.appendChild(td);
-                });
-                fragment.appendChild(tr);
+    function copyTable(bodyId, skipFirstTwo = false) {
+        const body = document.getElementById(bodyId);
+        if (body.rows.length === 0) return alert("Không có dữ liệu!");
+        const sel = window.getSelection(); sel.removeAllRanges();
+        const range = document.createRange();
+        if (skipFirstTwo) {
+            let tempTable = document.createElement("table");
+            Array.from(body.rows).forEach(row => {
+                let newRow = tempTable.insertRow();
+                for (let i = 2; i < row.cells.length; i++) newRow.insertCell().innerText = row.cells[i].innerText;
             });
-        } catch (error) {
-            console.error(`Lỗi khi đọc file ${f.name}:`, error);
+            document.body.appendChild(tempTable); range.selectNode(tempTable); sel.addRange(range);
+            document.execCommand('copy'); document.body.removeChild(tempTable);
+        } else {
+            range.selectNodeContents(body); sel.addRange(range); document.execCommand('copy');
+        }
+        alert("Đã copy dữ liệu!"); sel.removeAllRanges();
+    }
+
+    let svcFiles = [];
+    document.getElementById('file-svc').onchange = (e) => {
+        svcFiles = Array.from(e.target.files).filter(f => f.name.toLowerCase().startsWith('svc')).sort((a,b) => a.name.localeCompare(b.name, undefined, {numeric:true}));
+        document.getElementById('svc-list').innerText = "File đã chọn: " + svcFiles.map(f => f.name).join(", ");
+    };
+
+    async function processSVC() {
+        const body = document.getElementById('table-svc-body');
+        const colMap = [19, 13, 14, 16, 18, 12, 21, 50, 51, 52, 53, 54];
+        body.innerHTML = "";
+        for (let f of svcFiles) {
+            let rows = (await readExcel(f)).slice(5);
+            let lastIdx = -1;
+            for(let i=rows.length-1; i>=0; i--) if(rows[i].some(c => String(c).trim() !== "")) { lastIdx = i; break; }
+            if(lastIdx !== -1) {
+                rows.slice(0, lastIdx + 1).forEach(row => {
+                    let tr = body.insertRow();
+                    colMap.forEach(idx => tr.insertCell().innerText = row[idx] || "");
+                });
+            }
         }
     }
 
-    body.appendChild(fragment); // Chèn toàn bộ dữ liệu vào DOM một lần duy nhất
-    alert("Đã xử lý xong!");
-}
+    let fileG5, fileFX;
+    document.getElementById('file-g5').onchange = (e) => { fileG5 = e.target.files[0]; document.getElementById('g5-name').innerText = fileG5.name; };
+    document.getElementById('file-fx').onchange = (e) => { fileFX = e.target.files[0]; document.getElementById('fx-name').innerText = fileFX.name; };
 
-async function processG5FX() {
-    const fileG5 = document.getElementById('file-g5').files[0];
-    const fileFX = document.getElementById('file-fx').files[0];
-    if (!fileG5 || !fileFX) return alert("Vui lòng upload đủ 2 file!");
-    const dataG5 = await readExcel(fileG5);
-    const dataFX = await readExcel(fileFX, 1);
-    const body = document.getElementById('table-g5fx-body');
-    body.innerHTML = "";
-    const normalizeKey = s => processTab3(String(s || "").trim());
-    const fxMap = new Map();
-    dataFX.slice(1).forEach(r => r[2] && fxMap.set(normalizeKey(r[2]), r));
-    dataG5.slice(1).forEach(row => {
-        const fx = fxMap.get(normalizeKey(row[2])) || [];
-        const tr = body.insertRow();
-        [0,1,2].forEach(i => tr.insertCell().innerText = row[i] || "");
-        tr.insertCell().innerText = fx[3] || "";
-        tr.insertCell().innerText = fx[15] || "";
-        tr.insertCell().innerText = fx[16] || "";
-        tr.insertCell().innerText = fx[10] || "";
-        tr.insertCell().innerText = fx[5] || "";
-        tr.insertCell().innerText = fx[18] || "";
-        tr.insertCell().innerText = fx[19] || "";
-    });
-    alert("Xử lý xong Tab 2!");
-}
+    async function processG5FX() {
+        if(!fileG5 || !fileFX) return alert("Chọn đủ 2 file!");
+        const dataG5 = (await readExcel(fileG5, 0)).slice(5);
+        const dataFX = (await readExcel(fileFX, 1)).slice(4);
+        const body = document.getElementById('table-g5fx-body'); body.innerHTML = "";
+        dataG5.forEach(gRow => {
+            let tr = body.insertRow();
+            tr.insertCell().innerText = gRow[6] || ""; tr.insertCell().innerText = gRow[7] || "";
+            let [aa, bb] = String(gRow[6] || "").split('.');
+            let cc = String(gRow[7] || "").substring(0, 2);
+            let match = dataFX.find(fRow => normalize(aa) === normalize(fRow[5]) && normalize(bb) === normalize(fRow[6]) && normalize(cc) === normalize(fRow[7]));
+            const fxCols = [8, 9, 10, 11, 12, 17, 18, 19];
+            fxCols.forEach(idx => tr.insertCell().innerText = match ? (match[idx] || "") : "");
+        });
+    }
 
 function processTab3(line) {
     if (!line) return "";
