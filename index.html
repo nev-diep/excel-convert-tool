@@ -139,7 +139,6 @@
 <script>
 const h2fMap = {'ｱ':'ア','ｲ':'イ','ｳ':'ウ','ｴ':'エ','ｵ':'オ','ｶ':'カ','ｷ':'キ','ｸ':'ク','ｹ':'ケ','ｺ':'コ','ｻ':'サ','ｼ':'シ','ｽ':'ス','ｾ':'セ','ｿ':'ソ','ﾀ':'タ','ﾁ':'チ','ﾂ':'ツ','ﾃ':'テ','ﾄ':'ト','ﾅ':'ナ','ﾆ':'ニ','ﾇ':'ヌ','ﾈ':'ネ','ﾉ':'ノ','ﾊ':'ハ','ﾋ':'ヒ','ﾌ':'フ','ﾍ':'ヘ','ﾎ':'ホ','ﾏ':'マ','ﾐ':'ミ','ﾑ':'ム','ﾒ':'メ','ﾓ':'モ','ﾔ':'ヤ','ﾕ':'ユ','ﾖ':'ヨ','ﾗ':'ラ','ﾘ':'リ','ﾙ':'ル','ﾚ':'レ','ﾛ':'ロ','ﾜ':'ワ','ｦ':'ヲ','ﾝ':'ン','ｧ':'ァ','ｨ':'ィ','ｩ':'ゥ','ｪ':'ェ','ｫ':'ォ','ｬ':'ャ','ｭ':'ュ','ｮ':'ョ','ｯ':'ッ','ｰ':'ー','ﾞ':'゛','ﾟ':'゜','､':'、','｡':'。','･':'・','｢':'「','｣':'」'};
 const f2hMap = Object.fromEntries(Object.entries(h2fMap).map(([k, v]) => [v, k]));
-let svcFiles = [];
 
 function toHalfASCII(ch) {
     const c = ch.charCodeAt(0);
@@ -200,21 +199,24 @@ document.getElementById('file-svc').onchange = e => {
         }
         alert("Đã copy dữ liệu!"); sel.removeAllRanges();
     }
-
-    let svcFiles = [];
+// --- TAB 1: SVC ---
+let svcFiles = [];
     document.getElementById('file-svc').onchange = (e) => {
-        svcFiles = Array.from(e.target.files).filter(f => f.name.toLowerCase().startsWith('svc')).sort((a,b) => a.name.localeCompare(b.name, undefined, {numeric:true}));
-        document.getElementById('svc-list').innerText = "File đã chọn: " + svcFiles.map(f => f.name).join(", ");
+        svcFiles = Array.from(e.target.files).filter(f => f.name.toLowerCase().startsWith('svc'))
+                        .sort((a,b) => a.name.localeCompare(b.name, undefined, {numeric:true}));
+        document.getElementById('svc-list').innerText = "Đã chọn: " + svcFiles.map(f => f.name).join(", ");
     };
-
-    async function processSVC() {
+async function processSVC() {
+        if(svcFiles.length === 0) return alert("Vui lòng chọn file SVC!");
         const body = document.getElementById('table-svc-body');
         const colMap = [19, 13, 14, 16, 18, 12, 21, 50, 51, 52, 53, 54];
         body.innerHTML = "";
         for (let f of svcFiles) {
             let rows = (await readExcel(f)).slice(5);
             let lastIdx = -1;
-            for(let i=rows.length-1; i>=0; i--) if(rows[i].some(c => String(c).trim() !== "")) { lastIdx = i; break; }
+            for(let i=rows.length-1; i>=0; i--) {
+                if(rows[i].some(c => String(c).trim() !== "")) { lastIdx = i; break; }
+            }
             if(lastIdx !== -1) {
                 rows.slice(0, lastIdx + 1).forEach(row => {
                     let tr = body.insertRow();
@@ -222,26 +224,42 @@ document.getElementById('file-svc').onchange = e => {
                 });
             }
         }
+        alert("Đã xử lý xong!");
     }
-
-    let fileG5, fileFX;
-    document.getElementById('file-g5').onchange = (e) => { fileG5 = e.target.files[0]; document.getElementById('g5-name').innerText = fileG5.name; };
-    document.getElementById('file-fx').onchange = (e) => { fileFX = e.target.files[0]; document.getElementById('fx-name').innerText = fileFX.name; };
+// --- TAB 2: G5 & FX ---
+let fileG5, fileFX;
+    document.getElementById('file-g5').onchange = (e) => { fileG5 = e.target.files[0]; document.getElementById('g5-name').innerText = "File đã chọn: " + fileG5.name; };
+    document.getElementById('file-fx').onchange = (e) => { fileFX = e.target.files[0]; document.getElementById('fx-name').innerText = "File đã chọn: " + fileFX.name; };
 
     async function processG5FX() {
-        if(!fileG5 || !fileFX) return alert("Chọn đủ 2 file!");
+        if(!fileG5 || !fileFX) return alert("Vui lòng chọn đủ 2 file!");
         const dataG5 = (await readExcel(fileG5, 0)).slice(5);
         const dataFX = (await readExcel(fileFX, 1)).slice(4);
-        const body = document.getElementById('table-g5fx-body'); body.innerHTML = "";
+        const body = document.getElementById('table-g5fx-body');
+        body.innerHTML = "";
+
         dataG5.forEach(gRow => {
             let tr = body.insertRow();
-            tr.insertCell().innerText = gRow[6] || ""; tr.insertCell().innerText = gRow[7] || "";
-            let [aa, bb] = String(gRow[6] || "").split('.');
+            tr.insertCell().innerText = gRow[6] || ""; 
+            tr.insertCell().innerText = gRow[7] || "";
+
+            let g6Val = String(gRow[6] || "");
+            let [aa, bb] = g6Val.split('.');
             let cc = String(gRow[7] || "").substring(0, 2);
-            let match = dataFX.find(fRow => normalize(aa) === normalize(fRow[5]) && normalize(bb) === normalize(fRow[6]) && normalize(cc) === normalize(fRow[7]));
+
+            let match = dataFX.find(fRow => {
+                let xx = normalize(fRow[5]);
+                let yy = normalize(fRow[6]);
+                let zz = normalize(fRow[7]);
+                return normalize(aa) === xx && normalize(bb) === yy && normalize(cc) === zz;
+            });
+
             const fxCols = [8, 9, 10, 11, 12, 17, 18, 19];
-            fxCols.forEach(idx => tr.insertCell().innerText = match ? (match[idx] || "") : "");
+            fxCols.forEach(idx => {
+                tr.insertCell().innerText = match ? (match[idx] || "") : "";
+            });
         });
+        alert("Chuyển đổi hoàn tất!");
     }
 
 function processTab3(line) {
@@ -417,43 +435,64 @@ function copyFullOutput(id, statusId) {
 }
 
 function clearTool(n) {
-    if (n >= 3) {
-        document.getElementById(`input-list-t${n}`).innerHTML = "";
-        initInputRows(n);
-        handleProcess(n);
-        focusInput(n);
-    } else {
-        document.getElementById('table-svc-body').innerHTML = "";
-        document.getElementById('table-g5fx-body').innerHTML = "";
+        if (n === 1) {
+            svcFiles = [];
+            document.getElementById('file-svc').value = "";
+            document.getElementById('svc-list').innerText = "";
+            document.getElementById('table-svc-body').innerHTML = "";
+        } else {
+            fileG5 = null; fileFX = null;
+            document.getElementById('file-g5').value = "";
+            document.getElementById('file-fx').value = "";
+            document.getElementById('g5-name').innerText = "";
+            document.getElementById('fx-name').innerText = "";
+            document.getElementById('table-g5fx-body').innerHTML = "";
+        }
+        alert("Đã làm mới dữ liệu");
     }
-}
 
-function readExcel(file, sheetIdx = 0) {
-    return new Promise(res => {
-        const r = new FileReader();
-        r.onload = e => {
-            const wb = XLSX.read(e.target.result, { type: 'binary' });
-            res(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[sheetIdx]], { header: 1, defval: "" }));
-        };
-        r.readAsBinaryString(file);
-    });
-}
+function readExcel(file, sheetIndex = 0) {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const wb = XLSX.read(e.target.result, { type: 'binary' });
+                const sheetName = wb.SheetNames[sheetIndex];
+                const sheet = wb.Sheets[sheetName];
+                resolve(XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" }));
+            };
+            reader.readAsBinaryString(file);
+        });
+    }
 
-function copyTable(id) {
-    const el = document.getElementById(id);
-    const r = document.createRange();
-    r.selectNode(el);
-    const s = window.getSelection();
-    s.removeAllRanges();
-    s.addRange(r);
-    document.execCommand('copy');
-    alert("Đã copy bảng dữ liệu!");
-}
+function copyTable(bodyId, skipFirstTwo = false) {
+        const body = document.getElementById(bodyId);
+        if (body.rows.length === 0) return alert("Không có dữ liệu để copy!");
+        
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        const range = document.createRange();
 
-document.addEventListener('keydown', e => {
-    if (e.key === "Escape") {
-        const a = document.querySelector('.tool-section.active');
-        if (a) clearTool(parseInt(a.id.replace('section', '')));
+        if (skipFirstTwo) {
+            let tempTable = document.createElement("table");
+            Array.from(body.rows).forEach(row => {
+                let newRow = tempTable.insertRow();
+                for (let i = 2; i < row.cells.length; i++) {
+                    let newCell = newRow.insertCell();
+                    newCell.innerText = row.cells[i].innerText;
+                }
+            });
+            document.body.appendChild(tempTable);
+            range.selectNode(tempTable);
+            sel.addRange(range);
+            document.execCommand('copy');
+            document.body.removeChild(tempTable);
+        } else {
+            range.selectNodeContents(body);
+            sel.addRange(range);
+            document.execCommand('copy');
+        }
+        alert("Đã copy dữ liệu vào Clipboard!");
+        sel.removeAllRanges();
     }
 });
 </script>
