@@ -2,63 +2,99 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Excel Tool For Summary</title>
+    <title>Excel Professional Tool v2.0</title>
     <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/732/732220.png">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; margin: 20px; background-color: #f5f6f7; }
-        .container { max-width: 1600px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .menu-bar { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; padding-bottom: 15px; }
-        button { padding: 10px 18px; cursor: pointer; border: none; border-radius: 5px; font-weight: bold; transition: 0.3s; }
-        .btn-tab { background: #e0e0e0; color: #333; }
-        .btn-tab.active { background: #007bff; color: white; }
-        .tool-section { display: none; }
+        :root {
+            --primary: #2563eb;
+            --secondary: #64748b;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg: #f8fafc;
+            --card: #ffffff;
+        }
+
+        body { font-family: 'Inter', 'Segoe UI', sans-serif; margin: 0; background-color: var(--bg); color: #1e293b; line-height: 1.5; }
+        .container { max-width: 1600px; margin: 20px auto; background: var(--card); padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        
+        /* Header & Tabs */
+        .header-title { margin: 0 0 25px 0; font-size: 1.5rem; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 10px; }
+        .menu-bar { display: flex; gap: 8px; margin-bottom: 25px; background: #f1f5f9; padding: 6px; border-radius: 10px; }
+        .btn-tab { flex: 1; padding: 12px; cursor: pointer; border: none; border-radius: 8px; font-weight: 600; color: var(--secondary); background: transparent; transition: all 0.2s; }
+        .btn-tab.active { background: var(--card); color: var(--primary); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .btn-tab:hover:not(.active) { background: rgba(255,255,255,0.5); }
+
+        /* Sections */
+        .tool-section { display: none; animation: fadeIn 0.3s ease; }
         .tool-section.active { display: block; }
-        .tool-grid { display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 20px; align-items: start; }
-        .column { display: flex; flex-direction: column; }
-        label { font-weight: bold; margin-bottom: 8px; color: #444; }
-        .list-container { height: 600px; overflow-y: auto; border: 1px solid #ccc; border-radius: 6px; background: #fff; box-sizing: border-box; }
-        .line-item { display: flex; align-items: center; padding: 0 10px; border-bottom: 1px solid #eee; height: 35px; box-sizing: border-box; font-size: 14px; font-family: 'Consolas', monospace; }
-        .input-line { width: 100%; border: none; outline: none; background: transparent; font-family: inherit; font-size: inherit; color: #333; height: 100%; }
-        .input-line:focus { background-color: #f0f7ff; }
-        .out-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .btn-copy-mini { padding: 2px 5px; font-size: 10px; background: #495057; color: white; border-radius: 3px; margin-left: 5px; width: 55px; text-align: center; border: none; cursor: pointer; }
-        .btn-copy-mini.copied { background: #1e7e34 !important; }
-        .warning-panel { border-left: 5px solid #dc3545; color: #dc3545; font-size: 12px; font-weight: bold; }
-        .warn-item { color: #dc3545; background-color: #fff5f5; }
-        .action-area { margin: 15px 0; display: flex; gap: 10px; }
-        .btn-green { background: #28a745; color: white; }
-        .btn-orange { background: #fd7e14; color: white; }
-        .btn-red { background: #dc3545; color: white; }
-        #drop-zone, .upload-box { border: 2px dashed #007bff; padding: 30px; text-align: center; margin-bottom: 15px; border-radius: 8px; background: #f0f7ff; cursor: pointer; }
-        .file-info { color: #28a745; margin-top: 10px; font-size: 0.9em; font-weight: bold; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
-        th, td { border: 1px solid #ddd; padding: 6px; text-align: left; white-space: pre; }
-        th { background: #007bff; color: white; position: sticky; top: 0; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Tables & Lists */
+        .table-wrapper { overflow: auto; max-height: 550px; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { background: #f8fafc; color: #475569; position: sticky; top: 0; padding: 12px; border-bottom: 2px solid #e2e8f0; text-align: left; z-index: 10; }
+        /* QUAN TRỌNG: white-space: pre giúp giữ dấu cách trong bảng */
+        td { border-bottom: 1px solid #f1f5f9; padding: 10px 12px; white-space: pre; color: #334155; }
+        tr:hover { background-color: #f1f7ff; }
+
+        /* Tool Grid for Tab 3 & 4 */
+        .tool-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+        label { font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; color: var(--secondary); display: block; text-transform: uppercase; }
+        .list-container { height: 600px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; }
+        .line-item { display: flex; align-items: center; padding: 0 12px; border-bottom: 1px solid #f1f5f9; height: 38px; font-family: 'JetBrains Mono', 'Consolas', monospace; font-size: 13px; }
+        .input-line { width: 100%; border: none; outline: none; background: transparent; height: 100%; color: var(--primary); font-weight: 500; }
+
+        /* Upload Area */
+        .upload-box { border: 2px dashed #cbd5e1; padding: 40px; text-align: center; border-radius: 12px; background: #f8fafc; cursor: pointer; transition: all 0.3s; margin-bottom: 20px; }
+        .upload-box:hover { border-color: var(--primary); background: #eff6ff; }
+        .file-info { margin-top: 15px; font-size: 0.9rem; font-weight: 600; color: var(--success); }
+
+        /* Buttons */
+        .action-area { margin-bottom: 20px; display: flex; gap: 10px; align-items: center; }
+        .btn { padding: 10px 20px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; }
+        .btn-green { background: var(--success); color: white; }
+        .btn-orange { background: var(--warning); color: white; }
+        .btn-red { background: var(--danger); color: white; }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-copy-mini { padding: 4px 8px; font-size: 11px; background: #f1f5f9; color: var(--primary); border: 1px solid #e2e8f0; border-radius: 4px; cursor: pointer; font-weight: 700; }
+        .btn-copy-mini.copied { background: var(--success); color: white; border-color: var(--success); }
+
+        /* Warnings */
+        .warning-panel { border-left: 4px solid var(--danger) !important; background: #fffafb !important; }
+        .warn-text { color: var(--danger); font-size: 11px; font-weight: 700; }
     </style>
 </head>
 <body>
 
 <div class="container">
+    <h1 class="header-title">
+        <img src="https://cdn-icons-png.flaticon.com/512/732/732220.png" width="30" height="30" alt="logo">
+        Excel Automation Suite
+    </h1>
+
     <div class="menu-bar">
-        <button id="tab1-btn" class="btn-tab active" onclick="showTab(1)">Tạo Checklist G5 Nido</button>
-        <button id="tab2-btn" class="btn-tab" onclick="showTab(2)">Ghép Bess vào G5 Convert</button>
-        <button id="tab3-btn" class="btn-tab" onclick="showTab(3)">Convert Text</button>
-        <button id="tab4-btn" class="btn-tab" onclick="showTab(4)">Name Checker</button>
+        <button id="tab1-btn" class="btn-tab active" onclick="showTab(1)">Checklist G5 Nido</button>
+        <button id="tab2-btn" class="btn-tab" onclick="showTab(2)">Ghép Bess Data</button>
+        <button id="tab3-btn" class="btn-tab" onclick="showTab(3)">Text Converter</button>
+        <button id="tab4-btn" class="btn-tab" onclick="showTab(4)">Checker Pro</button>
     </div>
 
     <div id="section1" class="tool-section active">
-        <div id="drop-zone" onclick="document.getElementById('file-svc').click()">
-            <b>Click hoặc Kéo thả các file SVC vào đây</b>
+        <div class="upload-box" onclick="document.getElementById('file-svc').click()">
+            <div style="font-size: 2rem; margin-bottom: 10px;">📄</div>
+            <b>Chọn các file Excel xử lý</b>
+            <p style="color: #64748b; font-size: 0.8rem; margin: 5px 0;">Không giới hạn tên file - Hỗ trợ đa tệp</p>
             <input type="file" id="file-svc" multiple accept=".xlsx, .xlsm" style="display:none">
             <div id="svc-list" class="file-info"></div>
         </div>
         <div class="action-area">
-            <button class="btn-green" onclick="processSVC()">Xử lý dữ liệu</button>
-            <button class="btn-orange" onclick="copyTable('table-svc-body')">Copy Kết quả</button>
-            <button class="btn-red" onclick="clearTool(1)">Clear</button>
+            <button class="btn btn-green" onclick="processSVC()">⚡ Chạy xử lý</button>
+            <button class="btn btn-orange" onclick="copyTable('table-svc-body')">📋 Copy bảng</button>
+            <button class="btn btn-red" onclick="clearTool(1)">🧹 Xóa hết</button>
         </div>
-        <div style="overflow: auto; max-height: 500px; border: 1px solid #ddd;">
+        <div class="table-wrapper">
             <table>
                 <thead><tr><th>ﾌｨｼﾞｶﾙｱﾄﾞﾚｽ</th><th>GG</th><th>PP</th><th>ｸﾞﾙｰﾌﾟ名称</th><th>表示名称</th><th>ﾀｲﾌﾟ</th><th>警報点</th><th>手元操作可</th><th>IPD単位</th><th>最小</th><th>最大</th><th>少数桁</th></tr></thead>
                 <tbody id="table-svc-body"></tbody>
@@ -67,25 +103,26 @@
     </div>
 
     <div id="section2" class="tool-section">
-        <div class="upload-box" onclick="document.getElementById('file-g5').click()">
-            <b>1. Upload file G5 Convert</b>
-            <input type="file" id="file-g5" accept=".xlsx, .xlsm" style="display:none">
-            <div id="g5-name" class="file-info"></div>
-        </div>
-        <div class="upload-box" onclick="document.getElementById('file-fx').click()">
-            <b>2. Upload file Checklist FX</b>
-            <input type="file" id="file-fx" accept=".xlsx, .xlsm" style="display:none">
-            <div id="fx-name" class="file-info"></div>
+        <div class="tool-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 20px;">
+            <div class="upload-box" onclick="document.getElementById('file-g5').click()" style="padding: 20px; margin-bottom: 0;">
+                <b>1. File G5 Convert</b>
+                <input type="file" id="file-g5" accept=".xlsx, .xlsm" style="display:none">
+                <div id="g5-name" class="file-info"></div>
+            </div>
+            <div class="upload-box" onclick="document.getElementById('file-fx').click()" style="padding: 20px; margin-bottom: 0;">
+                <b>2. File Checklist FX</b>
+                <input type="file" id="file-fx" accept=".xlsx, .xlsm" style="display:none">
+                <div id="fx-name" class="file-info"></div>
+            </div>
         </div>
         <div class="action-area">
-            <button class="btn-green" onclick="processG5FX()">Ghép dữ liệu</button>
-            <button class="btn-orange" onclick="copyTable('table-g5fx-body')">Copy Kết quả</button>
-            <button class="btn-red" onclick="clearTool(2)">Clear</button>
+            <button class="btn btn-green" onclick="processG5FX()">🔗 Ghép dữ liệu</button>
+            <button class="btn btn-orange" onclick="copyTable('table-g5fx-body')">📋 Copy kết quả</button>
         </div>
-        <div style="overflow: auto; max-height: 500px; border: 1px solid #ddd;">
+        <div class="table-wrapper">
             <table>
                 <thead>
-                    <tr><th style="background:#6c757d">GG</th><th style="background:#6c757d">PP</th><th>表示名称</th><th>ﾎﾟｲﾝﾄ</th><th>状態ANA</th><th>警報</th><th>発停</th><th>信号種別</th><th>下限</th><th>上限</th></tr>
+                    <tr><th style="background:#475569; color:white">GG</th><th style="background:#475569; color:white">PP</th><th>表示名称</th><th>ﾎﾟｲﾝﾄ</th><th>状態ANA</th><th>警報</th><th>発停</th><th>信号種別</th><th>下限</th><th>上限</th></tr>
                 </thead>
                 <tbody id="table-g5fx-body"></tbody>
             </table>
@@ -94,45 +131,27 @@
 
     <div id="section3" class="tool-section">
         <div class="action-area">
-            <button class="btn-orange" onclick="copyFullOutput('output-list-t3', 'copy-status-t3')">Copy All</button>
-            <button class="btn-red" onclick="clearTool(3)">Clear (Esc)</button>
-            <span id="copy-status-t3" style="align-self:center; font-weight:bold; color:#28a745"></span>
+            <button class="btn btn-orange" onclick="copyFullOutput('output-list-t3', 'copy-status-t3')">📋 Copy All</button>
+            <button class="btn btn-red" onclick="clearTool(3)">🧹 Clear (Esc)</button>
+            <span id="copy-status-t3" style="font-weight:bold; color:var(--success)"></span>
         </div>
         <div class="tool-grid">
-            <div class="column">
-                <label>Input</label>
-                <div id="input-list-t3" class="list-container" onscroll="syncScroll(this, 'output-list-t3', 'warning-msg-t3')"></div>
-            </div>
-            <div class="column">
-                <label>Output</label>
-                <div id="output-list-t3" class="list-container" onscroll="syncScroll(this, 'input-list-t3', 'warning-msg-t3')"></div>
-            </div>
-            <div class="column">
-                <label>Warning</label>
-                <div id="warning-msg-t3" class="list-container warning-panel" onscroll="syncScroll(this, 'input-list-t3', 'output-list-t3')"></div>
-            </div>
+            <div class="column"><label>Dữ liệu gốc</label><div id="input-list-t3" class="list-container" onscroll="syncScroll(this, 'output-list-t3', 'warning-msg-t3')"></div></div>
+            <div class="column"><label>Kết quả (Auto Clean)</label><div id="output-list-t3" class="list-container" onscroll="syncScroll(this, 'input-list-t3', 'warning-msg-t3')"></div></div>
+            <div class="column"><label>Cảnh báo lỗi</label><div id="warning-msg-t3" class="list-container warning-panel" onscroll="syncScroll(this, 'input-list-t3', 'output-list-t3')"></div></div>
         </div>
     </div>
 
     <div id="section4" class="tool-section">
         <div class="action-area">
-            <button class="btn-orange" onclick="copyFullOutput('output-list-t4', 'copy-status-t4')">Copy All</button>
-            <button class="btn-red" onclick="clearTool(4)">Clear (Esc)</button>
-            <span id="copy-status-t4" style="align-self:center; font-weight:bold; color:#28a745"></span>
+            <button class="btn btn-orange" onclick="copyFullOutput('output-list-t4', 'copy-status-t4')">📋 Copy All</button>
+            <button class="btn btn-red" onclick="clearTool(4)">🧹 Clear (Esc)</button>
+            <span id="copy-status-t4" style="font-weight:bold; color:var(--success)"></span>
         </div>
         <div class="tool-grid">
-            <div class="column">
-                <label>Input</label>
-                <div id="input-list-t4" class="list-container" onscroll="syncScroll(this, 'output-list-t4', 'warning-msg-t4')"></div>
-            </div>
-            <div class="column">
-                <label>Output</label>
-                <div id="output-list-t4" class="list-container" onscroll="syncScroll(this, 'input-list-t4', 'warning-msg-t4')"></div>
-            </div>
-            <div class="column">
-                <label>Warning</label>
-                <div id="warning-msg-t4" class="list-container warning-panel" onscroll="syncScroll(this, 'input-list-t4', 'output-list-t4')"></div>
-            </div>
+            <div class="column"><label>Dữ liệu gốc</label><div id="input-list-t4" class="list-container" onscroll="syncScroll(this, 'output-list-t4', 'warning-msg-t4')"></div></div>
+            <div class="column"><label>Kết quả (Auto Clean)</label><div id="output-list-t4" class="list-container" onscroll="syncScroll(this, 'input-list-t4', 'warning-msg-t4')"></div></div>
+            <div class="column"><label>Cảnh báo lỗi</label><div id="warning-msg-t4" class="list-container warning-panel" onscroll="syncScroll(this, 'input-list-t4', 'output-list-t4')"></div></div>
         </div>
     </div>
 </div>
@@ -142,132 +161,99 @@ const h2fMap = {'ｱ':'ア','ｲ':'イ','ｳ':'ウ','ｴ':'エ','ｵ':'オ','ｶ
 const f2hMap = Object.fromEntries(Object.entries(h2fMap).map(([k, v]) => [v, k]));
 let svcFiles = [];
 
-// --- TABS LOGIC ---
+// TABS SWITCHER
 function showTab(n) {
-    document.querySelectorAll('.tool-section').forEach(s => s.classList.remove('active'));
-    document.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tool-section, .btn-tab').forEach(el => el.classList.remove('active'));
     document.getElementById('section' + n).classList.add('active');
     document.getElementById('tab' + n + '-btn').classList.add('active');
-    if (n >= 3) {
-        initInputRows(n);
-        handleProcess(n);
-        focusInput(n);
-    }
+    if (n >= 3) { initInputRows(n); handleProcess(n); focusInput(n); }
 }
 
-// --- TAB 1 & 2 LOGIC (RESTORED) ---
+// FILE SELECTION
 document.getElementById('file-svc').onchange = e => {
     svcFiles = Array.from(e.target.files).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
-    document.getElementById('svc-list').innerText = "Đã chọn: " + svcFiles.map(f => f.name).join(", ");
+    document.getElementById('svc-list').innerText = `Đã chọn ${svcFiles.length} file.`;
 };
+document.getElementById('file-g5').onchange = e => { if(e.target.files[0]) document.getElementById('g5-name').innerText = "✔ " + e.target.files[0].name; };
+document.getElementById('file-fx').onchange = e => { if(e.target.files[0]) document.getElementById('fx-name').innerText = "✔ " + e.target.files[0].name; };
 
-document.getElementById('file-g5').onchange = e => {
-    if(e.target.files[0]) document.getElementById('g5-name').innerText = "Đã chọn: " + e.target.files[0].name;
-};
-
-document.getElementById('file-fx').onchange = e => {
-    if(e.target.files[0]) document.getElementById('fx-name').innerText = "Đã chọn: " + e.target.files[0].name;
-};
-
+// TAB 1: HIỆU SUẤT CAO + GIỮ DẤU CÁCH
 async function processSVC() {
     const body = document.getElementById('table-svc-body');
-    body.innerHTML = ""; // Xóa cũ
-    if (svcFiles.length === 0) return alert("Chưa chọn file SVC!");
+    body.innerHTML = "";
+    if (svcFiles.length === 0) return alert("Vui lòng chọn file Excel!");
 
-    // Tạo một "vùng đệm" trong bộ nhớ
     const fragment = document.createDocumentFragment();
 
     for (const f of svcFiles) {
         const data = await readExcel(f);
         if (data.length === 0) continue;
 
-        const headerRow = data[0];
-        const getCol = (name) => headerRow.findIndex(cell => String(cell).trim() === name);
+        const header = data[0];
+        const getCol = (name) => header.findIndex(c => String(c || "").trim() === name);
 
         const cols = {
-            phys: getCol("PHYSICAL_ADDRESS"),
-            gg: getCol("GROUP_MANAGEMENT_CODE"),
-            pp: getCol("MANAGEMENT_CODE"),
-            union: getCol("UNION_GROUP_MANAGEMENT_CODE"),
-            io: getCol("IOOBJECT_TYPE_ID"),
-            alarm: getCol("ALARM_POINT"),
-            local: getCol("LOCAL_OPERATION_POINT"),
-            unit: getCol("UNIT"),
-            min: getCol("BAU_MIN_PRES_VALUE"),
-            max: getCol("BAU_MAX_PRES_VALUE"),
-            digit: getCol("VALID_NUMBER_OF_DIGITS"),
-            disp: getCol("DISPLAY_NAME"),
-            pname: getCol("POINT_NAME")
+            phys: getCol("PHYSICAL_ADDRESS"), gg: getCol("GROUP_MANAGEMENT_CODE"),
+            pp: getCol("MANAGEMENT_CODE"), union: getCol("UNION_GROUP_MANAGEMENT_CODE"),
+            io: getCol("IOOBJECT_TYPE_ID"), alarm: getCol("ALARM_POINT"),
+            local: getCol("LOCAL_OPERATION_POINT"), unit: getCol("UNIT"),
+            min: getCol("BAU_MIN_PRES_VALUE"), max: getCol("BAU_MAX_PRES_VALUE"),
+            digit: getCol("VALID_NUMBER_OF_DIGITS"), disp: getCol("DISPLAY_NAME"), pname: getCol("POINT_NAME")
         };
 
         const useDisplayName = (cols.disp !== -1 && data.length > 5 && data[5][cols.disp]);
 
         for (let r = 5; r < data.length; r++) {
-            const rowData = data[r];
-            if (!rowData) continue;
-
-            const tr = document.createElement('tr'); // Tạo hàng trong bộ nhớ, chưa đưa lên giao diện
-
-            // Mảng các index cột theo đúng thứ tự bảng hiển thị
-            const order = [cols.phys, cols.gg, cols.pp, cols.union];
+            const row = data[r];
+            if (!row) continue;
+            const tr = document.createElement('tr');
             
-            // 4 cột đầu
+            const order = [cols.phys, cols.gg, cols.pp, cols.union, "NAME_LOGIC", cols.io, cols.alarm, cols.local, cols.unit, cols.min, cols.max, cols.digit];
+            
             order.forEach(idx => {
                 const td = document.createElement('td');
-                td.innerText = idx !== -1 ? (rowData[idx] ?? "") : "";
+                if (idx === "NAME_LOGIC") {
+                    td.innerText = useDisplayName ? (row[cols.disp] ?? "") : (cols.pname !== -1 ? (row[cols.pname] ?? "") : "");
+                } else {
+                    td.innerText = idx !== -1 ? (row[idx] ?? "") : "";
+                }
                 tr.appendChild(td);
             });
-
-            // Cột 5: Logic Display Name / Point Name
-            const td5 = document.createElement('td');
-            let nameValue = useDisplayName ? rowData[cols.disp] : (cols.pname !== -1 ? rowData[cols.pname] : "");
-            td5.innerText = nameValue ?? "";
-            tr.appendChild(td5);
-
-            // Các cột còn lại
-            const rest = [cols.io, cols.alarm, cols.local, cols.unit, cols.min, cols.max, cols.digit];
-            rest.forEach(idx => {
-                const td = document.createElement('td');
-                td.innerText = idx !== -1 ? (rowData[idx] ?? "") : "";
-                tr.appendChild(td);
-            });
-
-            fragment.appendChild(tr); // Đưa hàng vào vùng đệm
+            fragment.appendChild(tr);
         }
     }
-
-    // BƯỚC QUAN TRỌNG NHẤT: Chỉ cập nhật giao diện 1 lần duy nhất
-    body.appendChild(fragment); 
-    alert("Đã xử lý xong");
+    body.appendChild(fragment);
 }
 
+// TAB 2: GHÉP BESS
 async function processG5FX() {
-    const fileG5 = document.getElementById('file-g5').files[0];
-    const fileFX = document.getElementById('file-fx').files[0];
-    if (!fileG5 || !fileFX) return alert("Vui lòng upload đủ 2 file!");
-    const dataG5 = await readExcel(fileG5);
-    const dataFX = await readExcel(fileFX, 1);
+    const fG5 = document.getElementById('file-g5').files[0];
+    const fFX = document.getElementById('file-fx').files[0];
+    if (!fG5 || !fFX) return alert("Upload đủ 2 file!");
+    
+    const dataG5 = await readExcel(fG5);
+    const dataFX = await readExcel(fFX, 1);
     const body = document.getElementById('table-g5fx-body');
     body.innerHTML = "";
-    const normalizeKey = s => processTab3(String(s || "").trim());
+    
+    const fragment = document.createDocumentFragment();
     const fxMap = new Map();
-    dataFX.slice(1).forEach(r => r[2] && fxMap.set(normalizeKey(r[2]), r));
+    dataFX.slice(1).forEach(r => r[2] && fxMap.set(processTab3(String(r[2])), r));
+
     dataG5.slice(1).forEach(row => {
-        const fx = fxMap.get(normalizeKey(row[2])) || [];
-        const tr = body.insertRow();
-        [0,1,2].forEach(i => tr.insertCell().innerText = row[i] || "");
-        tr.insertCell().innerText = fx[3] || "";
-        tr.insertCell().innerText = fx[15] || "";
-        tr.insertCell().innerText = fx[16] || "";
-        tr.insertCell().innerText = fx[10] || "";
-        tr.insertCell().innerText = fx[5] || "";
-        tr.insertCell().innerText = fx[18] || "";
-        tr.insertCell().innerText = fx[19] || "";
+        const fx = fxMap.get(processTab3(String(row[2]))) || [];
+        const tr = document.createElement('tr');
+        [row[0], row[1], row[2], fx[3], fx[15], fx[16], fx[10], fx[5], fx[18], fx[19]].forEach(val => {
+            const td = document.createElement('td');
+            td.innerText = val ?? "";
+            tr.appendChild(td);
+        });
+        fragment.appendChild(tr);
     });
-    alert("Xử lý xong Tab 2!");
+    body.appendChild(fragment);
 }
 
-// --- TAB 3 & 4 PROCESSING (KEEP CURRENT LOGIC) ---
+// TAB 3: LOGIC CONVERT (GIỮ NGUYÊN DẤU CÁCH TRONG CORE)
 function processTab3(line) {
     if (!line) return "";
     const dakutenMap = {'ガ':'ｶﾞ','ギ':'ｷﾞ','グ':'ｸﾞ','ゲ':'ｹﾞ','ゴ':'ｺﾞ','ザ':'ｻﾞ','ジ':'ｼﾞ','ズ':'ｽﾞ','ゼ':'ｾﾞ','ゾ':'ｿﾞ','ダ':'ﾀﾞ','ヂ':'ﾁﾞ','ヅ':'ﾂﾞ','デ':'ﾃﾞ','ド':'ﾄﾞ','バ':'ﾊﾞ','ビ':'ﾋﾞ','ブ':'ﾌﾞ','ベ':'ﾍﾞ','ボ':'ﾎﾞ','パ':'ﾊﾟ','ピ':'ﾋﾟ','プ':'ﾌﾟ','ペ':'ﾍﾟ','ポ':'ﾎﾟ','ヴ':'ｳﾞ'};
@@ -278,20 +264,20 @@ function processTab3(line) {
         let c = ch;
         if (c === ',') { out += '､'; continue; }
         const code = c.charCodeAt(0);
-        if (code >= 0xFF01 && code <= 0xFF5E) { c = String.fromCharCode(code - 0xFEE0); } 
+        if (code >= 0xFF01 && code <= 0xFF5E) { c = String.fromCharCode(code - 0xFEE0); }  
         else if (c === '　') { c = ' '; }
         out += f2hMap[c] || c;
     }
-    return out;
+    return out; // Trả về text nguyên bản (có dấu cách) để Tab 2 khớp chính xác
 }
 
 function processTab4(line) {
     if (!line) return "";
-    const toFullASCII = ch => { const c = ch.charCodeAt(0); return (c >= 0x21 && c <= 0x7E) ? String.fromCharCode(c + 0xFEE0) : ch; };
-    const toHalfASCII = ch => { const c = ch.charCodeAt(0); return (c >= 0xFF01 && c <= 0xFF5E) ? String.fromCharCode(c - 0xFEE0) : ch; };
+    const toFull = ch => { const c = ch.charCodeAt(0); return (c >= 0x21 && c <= 0x7E) ? String.fromCharCode(c + 0xFEE0) : ch; };
+    const toHalf = ch => { const c = ch.charCodeAt(0); return (c >= 0xFF01 && c <= 0xFF5E) ? String.fromCharCode(c - 0xFEE0) : ch; };
     let tmp = "";
     for (const ch of line) {
-        let c = toFullASCII(ch);
+        let c = toFull(ch);
         if (ch === ' ') c = '　';
         if (h2fMap[c]) c = h2fMap[c];
         tmp += c;
@@ -300,94 +286,83 @@ function processTab4(line) {
     const narrowPattern = /[０-９Ａ-Ｚａ-ｚ／（）＜＞：＃＆＋＝，]/;
     for (const ch of tmp) {
         if (ch === '　') out += ' ';
-        else if (narrowPattern.test(ch)) out += toHalfASCII(ch);
+        else if (narrowPattern.test(ch)) out += toHalf(ch);
         else out += ch;
     }
-    return out.replace(/－/g, '-').replace(/，/g, '、').trimEnd();
+    return out.replace(/－/g, '-').replace(/，/g, '、');
 }
 
-// --- UTILITIES ---
-function initInputRows(tabNum) {
-    const c = document.getElementById(`input-list-t${tabNum}`);
-    if (c.children.length) return;
-    for (let i = 0; i < 50; i++) addRow(tabNum, i);
-}
-
-function addRow(tabNum, idx) {
-    const row = document.createElement('div');
-    row.className = 'line-item';
-    const input = document.createElement('input');
-    input.className = 'input-line';
-    input.dataset.idx = idx;
-    input.oninput = () => handleProcess(tabNum);
-    input.onpaste = e => handlePaste(e, tabNum);
-    row.appendChild(input);
-    document.getElementById(`input-list-t${tabNum}`).appendChild(row);
-}
-
-function handlePaste(e, tabNum) {
-    e.preventDefault();
-    const lines = e.clipboardData.getData('text').split(/\r?\n/);
-    const c = document.getElementById(`input-list-t${tabNum}`);
-    c.innerHTML = "";
-    lines.forEach((l, i) => {
-        addRow(tabNum, i);
-        c.querySelectorAll('.input-line')[i].value = l;
-    });
-    for (let i = 0; i < 15; i++) addRow(tabNum, lines.length + i);
-    handleProcess(tabNum);
-    focusInput(tabNum);
-}
-
+// XỬ LÝ HIỂN THỊ TAB 3 & 4 (CHỈ XÓA DẤU CÁCH KHI OUTPUT)
 function handleProcess(tabNum) {
     const inputs = document.querySelectorAll(`#input-list-t${tabNum} .input-line`);
     const out = document.getElementById(`output-list-t${tabNum}`);
     const warn = document.getElementById(`warning-msg-t${tabNum}`);
     out.innerHTML = ""; warn.innerHTML = "";
+
     inputs.forEach(inp => {
-        const res = tabNum === 3 ? processTab3(inp.value) : processTab4(inp.value);
-                if (tabNum === 3 || tabNum === 4) {
-            res = res.replace(/ +/g, ' ').trim();
-        }
+        let rawRes = tabNum === 3 ? processTab3(inp.value) : processTab4(inp.value);
+        
+        // CHỈ LÀM SẠCH DẤU CÁCH KHI HIỂN THỊ Ở TAB 3 & 4
+        let cleanRes = rawRes.replace(/ +/g, ' ').trim();
+
         const oRow = document.createElement('div');
         oRow.className = 'line-item';
         if (inp.value.trim()) {
             const span = document.createElement('span');
             span.className = 'out-text';
-            span.innerText = res;
+            span.innerText = cleanRes;
             const btn = document.createElement('button');
             btn.className = 'btn-copy-mini';
             btn.innerText = 'Copy';
-            btn.dataset.text = res;
-            btn.onclick = () => copyLine(btn.dataset.text, btn);
+            btn.onclick = () => copyLine(cleanRes, btn);
             oRow.append(span, btn);
         }
         out.appendChild(oRow);
         
         const wRow = document.createElement('div');
-        wRow.className = 'line-item warn-item';
-        if (res.trim() !== "") {
+        wRow.className = 'line-item';
+        if (rawRes.trim() !== "") {
             let warnings = [];
-            if (tabNum === 3) {
-                const katakanaFullWidthOnly = /[\u30A1-\u30FC]/;
-                if (katakanaFullWidthOnly.test(res)) {
-                    const errorChar = res.match(katakanaFullWidthOnly)[0];
-                    warnings.push(`🚫 Còn Katakana chưa chuyển: "${errorChar}"`);
-                }
-            } else if (tabNum === 4) {
-                if (res.includes("  ")) warnings.push("🚫 Space x2");
-            }
-            if (/[A-Za-z0-9][ｰー][A-Za-z0-9]/.test(res) || /[A-Za-z0-9][ｰー]|[ｰー][A-Za-z0-9]/.test(res)) {
-                warnings.push("🚫 Có dấu ｰ là gạch nối?");
-            }
-            if (/[ァ-ヺｦ-ﾟ]-/.test(res)) {
-                warnings.push("🚫 Có dấu - là trường âm?");
-            }
-            if (/－/.test(res)) warnings.push("🚫 Full-width dash");
-            wRow.innerText = warnings.join(" ");
+            if (rawRes.includes("  ")) warnings.push("🚫 Space x2");
+            if (tabNum === 3 && /[\u30A1-\u30FC]/.test(rawRes)) warnings.push("🚫 Còn Katakana");
+            if (/[A-Za-z0-9][ｰー]/.test(rawRes)) warnings.push("🚫 Dấu ｰ lỗi?");
+            if (/－/.test(rawRes)) warnings.push("🚫 Full-dash");
+            wRow.innerHTML = `<span class="warn-text">${warnings.join(" ")}</span>`;
         }
         warn.appendChild(wRow);
     });
+}
+
+// UTILS
+function readExcel(file, sheetIdx = 0) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsArrayBuffer(file);
+        reader.onload = e => {
+            const data = new Uint8Array(e.target.result);
+            const wb = XLSX.read(data, { type: 'array' });
+            resolve(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[sheetIdx]], { header: 1, defval: "" }));
+        };
+    });
+}
+
+function initInputRows(n) { const c = document.getElementById(`input-list-t${n}`); if (!c.children.length) for (let i = 0; i < 50; i++) addRow(n, i); }
+function addRow(n, i) {
+    const r = document.createElement('div'); r.className = 'line-item';
+    const inp = document.createElement('input'); inp.className = 'input-line';
+    inp.oninput = () => handleProcess(n);
+    inp.onpaste = e => handlePaste(e, n);
+    r.appendChild(inp); document.getElementById(`input-list-t${n}`).appendChild(r);
+}
+
+function handlePaste(e, n) {
+    e.preventDefault();
+    const lines = e.clipboardData.getData('text').split(/\r?\n/);
+    const c = document.getElementById(`input-list-t${n}`);
+    c.innerHTML = "";
+    lines.forEach((l, i) => { addRow(n, i); c.querySelectorAll('.input-line')[i].value = l; });
+    for (let i = 0; i < 15; i++) addRow(n, lines.length + i);
+    handleProcess(n);
 }
 
 function syncScroll(el, id1, id2) {
@@ -398,82 +373,37 @@ function syncScroll(el, id1, id2) {
 
 function copyLine(text, btn) {
     navigator.clipboard.writeText(text);
-    btn.classList.add('copied');
-    btn.innerText = "Copied";
-    setTimeout(() => { btn.classList.remove('copied'); btn.innerText = "Copy"; }, 500);
+    btn.classList.add('copied'); btn.innerText = "OK";
+    setTimeout(() => { btn.classList.remove('copied'); btn.innerText = "Copy"; }, 600);
 }
 
 function copyFullOutput(id, statusId) {
     const t = [...document.querySelectorAll(`#${id} .out-text`)].map(e => e.innerText).join('\n');
     navigator.clipboard.writeText(t);
-    document.getElementById(statusId).innerText = "Đã copy toàn bộ! ✅";
-    setTimeout(() => document.getElementById(statusId).innerText = "", 1000);
+    document.getElementById(statusId).innerText = "Copied All! ✅";
+    setTimeout(() => document.getElementById(statusId).innerText = "", 1500);
 }
 
 function clearTool(n) {
-    if (n >= 3) {
-        document.getElementById(`input-list-t${n}`).innerHTML = "";
-        initInputRows(n);
-        handleProcess(n);
-        focusInput(n);
-    } else {
-        document.getElementById('table-svc-body').innerHTML = "";
-        document.getElementById('table-g5fx-body').innerHTML = "";
+    if (n >= 3) { document.getElementById(`input-list-t${n}`).innerHTML = ""; initInputRows(n); handleProcess(n); focusInput(n); }
+    else { 
+        document.getElementById(`table-svc-body`).innerHTML = "";
         if(n===1) { svcFiles = []; document.getElementById('svc-list').innerText = ""; }
-        if(n===2) { document.getElementById('g5-name').innerText = ""; document.getElementById('fx-name').innerText = ""; }
     }
-}
-
-function readExcel(file, sheetIdx = 0) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        
-        // Sử dụng ArrayBuffer thay vì BinaryString
-        reader.readAsArrayBuffer(file);
-        
-        reader.onload = (e) => {
-            try {
-                const data = new Uint8Array(e.target.result);
-                // Với ArrayBuffer, ta dùng type: 'array'
-                const workbook = XLSX.read(data, { type: 'array' });
-                
-                const firstSheetName = workbook.SheetNames[sheetIdx];
-                const worksheet = workbook.Sheets[firstSheetName];
-                
-                // Trích xuất dữ liệu thô (header: 1 trả về mảng 2 chiều)
-                // defval: "" đảm bảo các ô trống không bị undefined
-                const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
-                resolve(json);
-            } catch (err) {
-                console.error("Lỗi cấu trúc file Excel:", err);
-                reject(err);
-            }
-        };
-        
-        reader.onerror = (err) => reject(err);
-    });
 }
 
 function copyTable(id) {
     const el = document.getElementById(id);
-    const r = document.createRange();
-    r.selectNode(el);
-    const s = window.getSelection();
-    s.removeAllRanges();
-    s.addRange(r);
+    const r = document.createRange(); r.selectNode(el);
+    const s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
     document.execCommand('copy');
-    alert("Đã copy bảng dữ liệu!");
+    alert("Đã copy dữ liệu bảng!");
 }
 
-function focusInput(tabNum) {
-    setTimeout(() => { document.querySelector(`#input-list-t${tabNum} .input-line`)?.focus(); }, 0);
-}
+function focusInput(n) { setTimeout(() => document.querySelector(`#input-list-t${n} .input-line`)?.focus(), 10); }
 
 document.addEventListener('keydown', e => {
-    if (e.key === "Escape") {
-        const a = document.querySelector('.tool-section.active');
-        if (a) clearTool(parseInt(a.id.replace('section', '')));
-    }
+    if (e.key === "Escape") { const a = document.querySelector('.tool-section.active'); if (a) clearTool(parseInt(a.id.replace('section', ''))); }
 });
 </script>
 </body>
